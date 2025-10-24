@@ -1,0 +1,292 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="lauv">
+    <static>false</static>
+    
+    <!-- Main body link -->
+    <link name="base_link">
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>18.0</mass>
+        <inertia>
+          <!-- Calculated from LAUV URDF: ixx = 0.5 * mass * radius^2 -->
+          <ixx>0.10125</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <!-- iyy = izz = 0.083333333 * mass * (3 * radius^2 + length^2) -->
+          <iyy>1.751</iyy>
+          <iyz>0</iyz>
+          <izz>1.751</izz>
+        </inertia>
+      </inertial>
+      
+      <visual name="base_link_visual">
+        <geometry>
+          <!-- Using cylinder to represent torpedo shape -->
+          <cylinder>
+            <radius>0.075</radius>
+            <length>1.08</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.2 0.2 0.8 1.0</ambient>
+          <diffuse>0.2 0.2 0.8 1.0</diffuse>
+        </material>
+      </visual>
+      
+      <collision name="base_link_collision">
+        <geometry>
+          <cylinder>
+            <radius>0.075</radius>
+            <length>1.08</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <!-- IMU sensor -->
+      <sensor name="imu_sensor" type="imu">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>1</always_on>
+        <update_rate>100.0</update_rate>
+        <topic>/model/lauv/imu</topic>
+      </sensor>
+    </link>
+
+    <!-- Thruster link -->
+    <link name="thruster_0">
+      <pose>-0.53994 0 0 0 0 3.14159</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <pose>0 0 0 0 0 0</pose>
+        <inertia>
+          <ixx>0.001</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.001</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.001</izz>
+        </inertia>
+      </inertial>
+      
+      <visual name="thruster_0_visual">
+        <geometry>
+          <cylinder>
+            <radius>0.03</radius>
+            <length>0.05</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.8 0.8 0.2 1.0</ambient>
+          <diffuse>0.8 0.8 0.2 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <!-- Fin links -->
+    <link name="fin_0">
+      <pose>-0.4 0 0.04 0 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <pose>0 0 0 0 0 0</pose>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      
+      <visual name="fin_0_visual">
+        <geometry>
+          <box>
+            <size>0.08 0.02 0.06</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.2 0.2 1.0</ambient>
+          <diffuse>0.8 0.2 0.2 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <link name="fin_1">
+      <pose>-0.4 -0.04 0 1.5708 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <pose>0 0 0 0 0 0</pose>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      
+      <visual name="fin_1_visual">
+        <geometry>
+          <box>
+            <size>0.08 0.02 0.06</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.2 0.2 0.2 1.0</ambient>
+          <diffuse>0.2 0.2 0.2 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <link name="fin_2">
+      <pose>-0.4 0 -0.04 3.14159 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <pose>0 0 0 0 0 0</pose>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      
+      <visual name="fin_2_visual">
+        <geometry>
+          <box>
+            <size>0.08 0.02 0.06</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.2 0.2 0.2 1.0</ambient>
+          <diffuse>0.2 0.2 0.2 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <link name="fin_3">
+      <pose>-0.4 0.04 0 -1.5708 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <pose>0 0 0 0 0 0</pose>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      
+      <visual name="fin_3_visual">
+        <geometry>
+          <box>
+            <size>0.08 0.02 0.06</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.2 0.2 0.2 1.0</ambient>
+          <diffuse>0.2 0.2 0.2 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <!-- Joints -->
+    <joint name="thruster_0_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>thruster_0</child>
+      <pose>-0.53994 0 0 0 0 3.14159</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <joint name="fin_0_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>fin_0</child>
+      <pose>-0.4 0 0.04 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1.5708</lower>
+          <upper>1.5708</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <joint name="fin_1_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>fin_1</child>
+      <pose>-0.4 -0.04 0 1.5708 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1.5708</lower>
+          <upper>1.5708</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <joint name="fin_2_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>fin_2</child>
+      <pose>-0.4 0 -0.04 3.14159 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1.5708</lower>
+          <upper>1.5708</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <joint name="fin_3_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>fin_3</child>
+      <pose>-0.4 0.04 0 -1.5708 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1.5708</lower>
+          <upper>1.5708</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- Buoyancy plugin for underwater behavior -->
+    <plugin filename="gz-sim-buoyancy-system" name="gz::sim::systems::Buoyancy">
+      <uniform_fluid_density>1025</uniform_fluid_density>
+    </plugin>
+
+    <!-- Thruster plugin -->
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>lauv</namespace>
+      <joint_name>thruster_0_joint</joint_name>
+      <thrust_coefficient>0.02</thrust_coefficient>
+      <fluid_density>1025.0</fluid_density>
+      <propeller_diameter>0.2</propeller_diameter>
+      <velocity_control>true</velocity_control>
+      <use_angvel_cmd>false</use_angvel_cmd>
+    </plugin>
+
+    <!-- Joint state publisher plugin -->
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>joint_states</topic>
+    </plugin>
+
+    <!-- Odometry publisher plugin -->
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>lauv/odom</odom_frame>
+      <robot_base_frame>lauv</robot_base_frame>
+    </plugin>
+
+  </model>
+</sdf>
