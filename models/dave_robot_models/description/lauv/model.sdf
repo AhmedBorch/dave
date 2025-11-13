@@ -25,10 +25,6 @@
             <uri>model://meshes/lauv/body.dae</uri>
           </mesh>
         </geometry>
-        <!-- <material>
-          <ambient>0.8 0.8 0.2 1.0</ambient>
-          <diffuse>0.8 0.8 0.2 1.0</diffuse>
-        </material> -->
       </visual>
       
       <collision name="base_link_collision">
@@ -67,25 +63,7 @@
             <scale>1 1 1</scale>
           </mesh>
         </geometry>
-        <!-- <material>
-          <ambient>0.8 0.8 0.2 1.0</ambient>
-          <diffuse>0.8 0.8 0.2 1.0</diffuse>
-        </material> -->
       </visual>
-<!-- 
-      <visual>
-        <geometry>
-          <mesh filename="${prop_mesh_file}" scale="1 1 1" />
-        </geometry>
-      </visual>
-
-      <inertial>
-        <mass value="0.001" />
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <inertia ixx="0.000000017" ixy="0.0" ixz="0.0"
-               iyy="0.000000017" iyz="0.0"
-               izz="0.000000017" />
-      </inertial> -->
     </link>
 
     <!-- Fin links -->
@@ -106,17 +84,10 @@
       
       <visual name="fin_0_visual">
         <geometry>
-          <!-- <box>
-            <size>0.08 0.02 0.06</size>
-          </box> -->
           <mesh>
             <uri>model://meshes/lauv/red_fin.dae</uri>
           </mesh>
         </geometry>
-        <!-- <material>
-          <ambient>0.8 0.2 0.2 1.0</ambient>
-          <diffuse>0.8 0.2 0.2 1.0</diffuse>
-        </material> -->
       </visual>
     </link>
 
@@ -137,17 +108,10 @@
       
       <visual name="fin_1_visual">
         <geometry>
-          <!-- <box>
-            <size>0.08 0.02 0.06</size>
-          </box> -->
           <mesh>
             <uri>model://meshes/lauv/black_fin.dae</uri>
           </mesh>
         </geometry>
-        <material>
-          <ambient>0.2 0.2 0.2 1.0</ambient>
-          <diffuse>0.2 0.2 0.2 1.0</diffuse>
-        </material>
       </visual>
     </link>
 
@@ -168,17 +132,10 @@
       
       <visual name="fin_2_visual">
         <geometry>
-          <!-- <box>
-            <size>0.08 0.02 0.06</size>
-          </box> -->
           <mesh>
             <uri>model://meshes/lauv/black_fin.dae</uri>
           </mesh>
         </geometry>
-        <material>
-          <ambient>0.2 0.2 0.2 1.0</ambient>
-          <diffuse>0.2 0.2 0.2 1.0</diffuse>
-        </material>
       </visual>
     </link>
 
@@ -206,10 +163,6 @@
             <uri>model://meshes/lauv/black_fin.dae</uri>
           </mesh>
         </geometry>
-        <material>
-          <ambient>0.2 0.2 0.2 1.0</ambient>
-          <diffuse>0.2 0.2 0.2 1.0</diffuse>
-        </material>
       </visual>
     </link>
 
@@ -280,9 +233,9 @@
     </joint>
 
     <!-- Buoyancy plugin for underwater behavior -->
-    <plugin filename="gz-sim-buoyancy-system" name="gz::sim::systems::Buoyancy">
+    <!-- <plugin filename="gz-sim-buoyancy-system" name="gz::sim::systems::Buoyancy">
       <uniform_fluid_density>1025</uniform_fluid_density>
-    </plugin>
+    </plugin> -->
 
     <!-- Thruster plugin -->
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
