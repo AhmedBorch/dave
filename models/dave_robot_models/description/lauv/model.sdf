@@ -9,12 +9,12 @@
         <pose>0 0 0 0 0 0</pose>
         <mass>18.0</mass>
         <inertia>
-          <ixx>0.10125</ixx>
+          <ixx>2.6244000000000005</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>1.751</iyy>
+          <iyy>3.0617999877528</iyy>
           <iyz>0</iyz>
-          <izz>1.751</izz>
+          <izz>3.0617999877528</izz>
         </inertia>
       </inertial>
       
@@ -29,12 +29,16 @@
       </visual>
       
       <collision name="base_link_collision">
-        <pose>0 0 0 0 0 0</pose>
+        <pose>0 0 0.05 0 0 0</pose>
         <geometry>
-          <cylinder>
-            <radius>0.075</radius>
-            <length>1.08</length>
-          </cylinder>
+          <!-- <cylinder>
+            <radius>0.2</radius>
+            <length>1.2</length>
+          </cylinder> -->
+          <box>
+            <!-- <size>0.075 0.075 1.08</size> -->
+             <size>0.15 0.15 1.1</size>
+          </box>
         </geometry>
       </collision>
 
@@ -96,7 +100,7 @@
       </visual>
     </link>
 
-    <link name="fin_1">
+    <!-- <link name="fin_1">
       <pose>-0.4 -0.04 0 1.5708 0 0</pose>
       <inertial>
         <mass>0.05</mass>
@@ -161,15 +165,12 @@
       
       <visual name="fin_3_visual">
         <geometry>
-          <!-- <box>
-            <size>0.08 0.02 0.06</size>
-          </box> -->
           <mesh>
             <uri>model://meshes/lauv/black_fin.dae</uri>
           </mesh>
         </geometry>
       </visual>
-    </link>
+    </link> -->
 
     <!-- Joints -->
     <joint name="thruster_0_joint" type="revolute">
@@ -198,7 +199,7 @@
       </axis>
     </joint>
 
-    <joint name="fin_1_joint" type="revolute">
+    <!-- <joint name="fin_1_joint" type="revolute">
       <parent>base_link</parent>
       <child>fin_1</child>
       <pose>-0.4 -0.04 0 1.5708 0 0</pose>
@@ -235,7 +236,7 @@
           <upper>1.5708</upper>
         </limit>
       </axis>
-    </joint>
+    </joint> -->
 
     <!-- Thruster plugin -->
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
