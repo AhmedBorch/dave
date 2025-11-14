@@ -232,11 +232,6 @@
       </axis>
     </joint>
 
-    <!-- Buoyancy plugin for underwater behavior -->
-    <!-- <plugin filename="gz-sim-buoyancy-system" name="gz::sim::systems::Buoyancy">
-      <uniform_fluid_density>1025</uniform_fluid_density>
-    </plugin> -->
-
     <!-- Thruster plugin -->
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <namespace>lauv</namespace>
@@ -246,6 +241,47 @@
       <propeller_diameter>0.2</propeller_diameter>
       <velocity_control>true</velocity_control>
       <use_angvel_cmd>false</use_angvel_cmd>
+    </plugin>
+
+    <!-- Hydrodynamics plugin -->
+    <plugin filename="gz-sim-hydrodynamics-system" name="gz::sim::systems::Hydrodynamics">
+      <namespace>lauv</namespace>
+      <link_name>base_link</link_name>
+      <fluid_density>1025.0</fluid_density>
+
+      <!-- Added mass -->
+      <added_mass>
+            1     0     0     0     0     0
+            0     16    0     0     0     0
+            0     0     16    0     0     0
+            0     0     0     0.005 0     0
+            0     0     0     0     1.3   0
+            0     0     0     0     0     1.3
+      </added_mass>
+
+      <!-- Linear Drag Coefficients -->
+      <linear_damping>
+            -2.4  0     0     0     0     0
+            0     -23   0     0     0     11.5
+            0     0     -23   0     -11.5 0
+            0     0     0     -0.3  0     0
+            0     0     3.1   0     -9.7  0
+            0     -3.1  0     0     0     -9.7
+      </linear_damping>
+
+      <linear_damping_forward_speed>
+            0 0 0 0 0 0
+      </linear_damping_forward_speed>
+
+      <quadratic_damping>
+            -2.4   0      0      0       0      0
+            0      -80    0      0       0      0.3
+            0      0      -80    0       -0.3   0
+            0      0      0      -0.0006 0      0
+            0      0      1.5    0       -9.1   0
+            0      -1.5   0      0       0      -9.1
+      </quadratic_damping>
+
     </plugin>
 
     <!-- Joint state publisher plugin -->
@@ -259,5 +295,10 @@
       <robot_base_frame>lauv</robot_base_frame>
     </plugin>
 
+    <!-- Sensors -->
+    <plugin
+      filename="gz-sim-imu-system"
+      name="gz::sim::systems::Imu">
+    </plugin>
   </model>
 </sdf>
