@@ -19,6 +19,7 @@
       </inertial>
       
       <visual name="base_link_visual">
+        <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
@@ -28,6 +29,7 @@
       </visual>
       
       <collision name="base_link_collision">
+        <pose>0 0 0 0 0 0</pose>
         <geometry>
           <cylinder>
             <radius>0.075</radius>
@@ -46,6 +48,9 @@
     </link>
 
     <!-- Thruster link -->
+     <!-- <xacro:thruster_macro robot_namespace="${namespace}" thruster_id="0">
+        <origin xyz="-0.53994 0 0" rpy="0 0 ${pi}" />
+    </xacro:thruster_macro> -->
     <link name="thruster_0">
       <pose>-0.53994 0 0 0 0 3.14159</pose>
       <inertial>
@@ -238,7 +243,7 @@
       <joint_name>thruster_0_joint</joint_name>
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1025.0</fluid_density>
-      <propeller_diameter>0.2</propeller_diameter>
+      <!-- <propeller_diameter>0.2</propeller_diameter> -->
       <velocity_control>true</velocity_control>
       <use_angvel_cmd>false</use_angvel_cmd>
     </plugin>
@@ -247,52 +252,49 @@
     <plugin filename="gz-sim-hydrodynamics-system" name="gz::sim::systems::Hydrodynamics">
       <namespace>lauv</namespace>
       <link_name>base_link</link_name>
-      <fluid_density>1025.0</fluid_density>
+      <water_density>1025.0</water_density>
 
       <!-- Added mass -->
-      <added_mass>
-            1     0     0     0     0     0
-            0     16    0     0     0     0
-            0     0     16    0     0     0
-            0     0     0     0.005 0     0
-            0     0     0     0     1.3   0
-            0     0     0     0     0     1.3
-      </added_mass>
+      <xDotU>1</xDotU>
+      <yDotV>16</yDotV>
+      <zDotW>16</zDotW>
+      <kDotP>0.005</kDotP>
+      <mDotQ>1.3</mDotQ>
+      <nDotR>1.3</nDotR>
 
       <!-- Linear Drag Coefficients -->
-      <linear_damping>
-            -2.4  0     0     0     0     0
-            0     -23   0     0     0     11.5
-            0     0     -23   0     -11.5 0
-            0     0     0     -0.3  0     0
-            0     0     3.1   0     -9.7  0
-            0     -3.1  0     0     0     -9.7
-      </linear_damping>
+      <!-- diagonal terms -->
+      <xU>-2.4</xU>
+      <yV>-23</yV>
+      <zW>-23</zW>
+      <kP>-0.3</kP>
+      <mQ>-9.7</mQ>
+      <nR>-9.7</nR>
 
-      <linear_damping_forward_speed>
-            0 0 0 0 0 0
-      </linear_damping_forward_speed>
-
-      <quadratic_damping>
-            -2.4   0      0      0       0      0
-            0      -80    0      0       0      0.3
-            0      0      -80    0       -0.3   0
-            0      0      0      -0.0006 0      0
-            0      0      1.5    0       -9.1   0
-            0      -1.5   0      0       0      -9.1
-      </quadratic_damping>
+      <!-- Quadratic Drag Coefficients -->
+      <xUabsU>-2.4</xUabsU>
+      <yVabsV>-80</yVabsV>
+      <zWabsW>-80</zWabsW>
+      <kPabsP>-0.0006</kPabsP>
+      <mQabsQ>-9.1</mQabsQ>
+      <nRabsR>-9.1</nRabsR>
 
     </plugin>
 
     <!-- Joint state publisher plugin -->
-    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
-      <topic>joint_states</topic>
+    <plugin
+      filename="gz-sim-joint-state-publisher-system"
+      name="gz::sim::systems::JointStatePublisher">
     </plugin>
 
     <!-- Odometry publisher plugin -->
-    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
-      <odom_frame>lauv/odom</odom_frame>
-      <robot_base_frame>lauv</robot_base_frame>
+    <plugin
+      filename="gz-sim-odometry-publisher-system"
+      name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>map</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>100</odom_publish_frequency>
     </plugin>
 
     <!-- Sensors -->
