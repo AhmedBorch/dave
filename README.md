@@ -18,9 +18,8 @@ This only works in Ubuntu 24.04
 Follow this installation guide https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
 
 ### Gazebo harmonic
-```
-sudo apt install -y gz-harmonic python3-rosdep python3-rosinstall-generator python3-vcstool ros-jazzy-gz-plugin-vendor ros-jazzy-gz-ros2-control ros-jazzy-effort-controllers ros-jazzy-geographic-info ros-jazzy-image-view ros-jazzy-joint-state-publisher ros-jazzy-joy ros-jazzy-joy-teleop ros-jazzy-key-teleop ros-jazzy-moveit-planners ros-jazzy-moveit-simple-controller-manager ros-jazzy-moveit-ros-visualization ros-jazzy-pcl-ros ros-jazzy-robot-localization ros-jazzy-robot-state-publisher ros-jazzy-ros-base ros-jazzy-ros2-controllers ros-jazzy-rqt ros-jazzy-rqt-common-plugins ros-jazzy-rviz2 ros-jazzy-teleop-tools ros-jazzy-teleop-twist-joy ros-jazzy-teleop-twist-keyboard ros-jazzy-tf2-geometry-msgs ros-jazzy-tf2-tools ros-jazzy-urdfdom-py ros-jazzy-gz-ros2-control ros-jazzy-xacro ros-jazzy-ros-gz-sim ros-jazzy-ros-gz-bridge
-```
+Gazebo installation https://gazebosim.org/docs/latest/install_ubuntu/
+
 
 ### Verify if you have everything alright
 Source your ROS env
