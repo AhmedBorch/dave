@@ -51,6 +51,25 @@
       </sensor>
     </link>
 
+    <!-- Pressure sensor -->
+    <link name="pressure_link">
+      <pose>0 0 -0.06 0 0 0</pose> <inertial>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>1e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1e-05</iyy>
+          <iyz>0</iyz>
+          <izz>1e-05</izz>
+        </inertia>
+      </inertial>
+    </link>
+
+    <joint name="pressure_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>pressure_link</child>
+    </joint>
     <!-- Thruster link -->
      <!-- <xacro:thruster_macro robot_namespace="${namespace}" thruster_id="0">
         <origin xyz="-0.53994 0 0" rpy="0 0 ${pi}" />
@@ -311,5 +330,19 @@
       filename="gz-sim-imu-system"
       name="gz::sim::systems::Imu">
     </plugin>
+
+    <plugin
+      filename="sea_pressure_sensor"
+      name="dave_gz_sensor_plugins::SubseaPressureSensorPlugin">
+      <namespace>lauv</namespace>
+      <topic>sea_pressure</topic>
+      <update_rate>10</update_rate>
+      <noise_sigma>3.0</noise_sigma>
+      <estimate_depth_on>true</estimate_depth_on>
+      <standard_pressure>101.325</standard_pressure>
+      <kPa_per_meter>9.80638</kPa_per_meter>
+    </plugin>
+
+    
   </model>
 </sdf>
