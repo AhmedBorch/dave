@@ -34,7 +34,9 @@ gz sim
 ## Download DAVE
 Clone this repository to your workspace. Build and source your ws and try running this command
 ```
-ros2 launch dave_demos dave_robot.launch.py z:=-5 namespace:=rexrov world_name:=dave_ocean_waves paused:=false
+ros2 launch dave_demos dave_robot.launch.py z:=-5 namespace:=lauv world_name:=dave_ocean_waves paused:=false
 
 ```
+The LAUV should pop up like this
 
+![DAVE LAUV simulation in Gazebo](docs/fig/lauv_sim.png)
