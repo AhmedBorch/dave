@@ -68,7 +68,7 @@
 
     <!-- DVL -->
      <link name="dvl_link">
-      <pose>0.0 0 -0.06 0 0 0</pose>
+      <pose>0.0 0 -0.04 0 0 0</pose>
       <velocity_decay />
       <gravity>1</gravity>
       <velocity_decay />
@@ -169,9 +169,14 @@
       <inertial>
         <mass>0.1</mass>
         <pose>0 0 0 0 0 0</pose>
-        <inertia ixx="0.000000017" ixy="0.0" ixz="0.0"
-               iyy="0.000000017" iyz="0.0"
-               izz="0.000000017" />
+        <inertia>
+          <ixx>0.000000017</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.000000017</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.000000017</izz>
+        </inertia>
       </inertial>
       
       <visual name="thruster_0_visual">
@@ -302,8 +307,8 @@
       <axis>
         <xyz>0 0 1</xyz>
         <limit>
-          <lower>-0.261799</lower>
-          <upper>0.261799</upper>
+          <lower>-1.396263402</lower>
+          <upper>1.396263402</upper>
         </limit>
       </axis>
     </joint>
@@ -315,8 +320,8 @@
       <axis>
         <xyz>0 0 1</xyz>
         <limit>
-          <lower>-0.261799</lower>
-          <upper>0.261799</upper>
+          <lower>-1.396263402</lower>
+          <upper>1.396263402</upper>
         </limit>
       </axis>
     </joint>
@@ -328,8 +333,8 @@
       <axis>
         <xyz>0 0 1</xyz>
         <limit>
-          <lower>-0.261799</lower>
-          <upper>0.261799</upper>
+          <lower>-1.396263402</lower>
+          <upper>1.396263402</upper>
         </limit>
       </axis>
     </joint>
@@ -341,8 +346,8 @@
       <axis>
         <xyz>0 0 1</xyz>
         <limit>
-          <lower>-0.261799</lower>
-          <upper>0.261799</upper>
+          <lower>-1.396263402</lower>
+          <upper>1.396263402</upper>
         </limit>
       </axis>
     </joint>
@@ -353,9 +358,69 @@
       <joint_name>thruster_0_joint</joint_name>
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1025.0</fluid_density>
-      <!-- <propeller_diameter>0.2</propeller_diameter> -->
       <velocity_control>true</velocity_control>
       <use_angvel_cmd>false</use_angvel_cmd>
+    </plugin>
+
+    <!-- Fin plugin -->
+    <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
+      <air_density>1000</air_density>
+      <cla>4.13</cla>
+      <cla_stall>-1.1</cla_stall>
+      <cda>0.2</cda>
+      <cda_stall>0.03</cda_stall>
+      <alpha_stall>0.17</alpha_stall>
+      <a0>0</a0>
+      <area>0.0244</area>
+      <upward>0 1 0</upward>
+      <forward>1 0 0</forward>
+      <link_name>fin_0</link_name>
+      <cp>0 0 0</cp>
+    </plugin>
+
+    <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
+      <air_density>1000</air_density>
+      <cla>4.13</cla>
+      <cla_stall>-1.1</cla_stall>
+      <cda>0.2</cda>
+      <cda_stall>0.03</cda_stall>
+      <alpha_stall>0.17</alpha_stall>
+      <a0>0</a0>
+      <area>0.0244</area>
+      <upward>0 1 0</upward>
+      <forward>1 0 0</forward>
+      <link_name>fin_1</link_name>
+      <cp>0 0 0</cp>
+    </plugin>
+
+    <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
+      <air_density>1000</air_density>
+      <cla>4.13</cla>
+      <cla_stall>-1.1</cla_stall>
+      <cda>0.2</cda>
+      <cda_stall>0.03</cda_stall>
+      <alpha_stall>0.17</alpha_stall>
+      <a0>0</a0>
+      <area>0.0244</area>
+      <upward>0 1 0</upward>
+      <forward>1 0 0</forward>
+      <link_name>fin_2</link_name>
+      <cp>0 0 0</cp>
+    </plugin>
+
+    <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
+      <air_density>1000</air_density>
+      <cla>4.13</cla>
+      <cla_stall>-1.1</cla_stall>
+      <cda>0.2</cda>
+      <cda_stall>0.03</cda_stall>
+      <alpha_stall>0.17</alpha_stall>
+      <a0>0</a0>
+      <area>0.0244</area>
+      <upward>0 1 0</upward>
+      <forward>1 0 0</forward>
+      <link_name>fin_3</link_name>
+      <cp>0 0 0</cp>
     </plugin>
 
     <!-- Hydrodynamics plugin -->
@@ -395,6 +460,30 @@
     <plugin
       filename="gz-sim-joint-state-publisher-system"
       name="gz::sim::systems::JointStatePublisher">
+    </plugin>
+
+    <plugin
+      filename="gz-sim-joint-position-controller-system"
+      name="gz::sim::systems::JointPositionController">
+      <joint_name>fin_0_joint</joint_name>
+    </plugin>
+
+    <plugin
+      filename="gz-sim-joint-position-controller-system"
+      name="gz::sim::systems::JointPositionController">
+      <joint_name>fin_1_joint</joint_name>
+    </plugin>
+
+    <plugin
+      filename="gz-sim-joint-position-controller-system"
+      name="gz::sim::systems::JointPositionController">
+      <joint_name>fin_2_joint</joint_name>
+    </plugin>
+
+    <plugin
+      filename="gz-sim-joint-position-controller-system"
+      name="gz::sim::systems::JointPositionController">
+      <joint_name>fin_3_joint</joint_name>
     </plugin>
 
     <!-- Odometry publisher plugin -->
