@@ -15,8 +15,11 @@ def launch_setup(context, *args, **kwargs):
         fin_joints.append(f"/model/{namespace}/joint/fin_{fin}_joint")
 
     lauv_arguments = (
+        # Fin commands
+        [f"{fin_joint}/cmd_pos@std_msgs/msg/Float64@gz.msgs.Double" for fin_joint in fin_joints]
+        +
         # Thruster commands
-        [f"/model/{namespace}/joint/thruster_0_joint/cmd_thrust@std_msgs/msg/Float64@gz.msgs.Double"]
+        [f"{thruster_joint}/cmd_thrust@std_msgs/msg/Float64@gz.msgs.Double" for thruster_joint in thruster_joints]
         # Sensor data
         + [
             f"/model/{namespace}/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry",

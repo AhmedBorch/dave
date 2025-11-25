@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
   <model name="lauv">
-    <static>false</static>
+    <!-- <static>false</static> -->
     
     <!-- Main body link -->
     <link name="base_link">
@@ -32,7 +32,7 @@
         <pose>0 0 0.0 0 0 0</pose>
         <geometry>
           <box>
-             <size>1.1 0.14 0.14</size>
+             <size>0.95 0.14 0.14</size>
           </box>
         </geometry>
       </collision>
@@ -187,6 +187,14 @@
           </mesh>
         </geometry>
       </visual>
+
+      <collision name="thruster_0_collision">
+        <geometry>
+          <box>
+             <size>0.009756 0.1 0.1</size>
+          </box>
+        </geometry>
+      </collision>
     </link>
 
     <!-- Fin links -->
@@ -212,6 +220,14 @@
           </mesh>
         </geometry>
       </visual>
+      
+      <collision name="fin_0_collision">
+        <geometry>
+          <box>
+             <size>0.1 0.00487804 0.1</size>
+          </box>
+        </geometry>
+      </collision>
     </link>
 
     <link name="fin_1">
@@ -236,6 +252,14 @@
           </mesh>
         </geometry>
       </visual>
+
+      <collision name="fin_1_collision">
+        <geometry>
+          <box>
+             <size>0.1 0.00487804 0.1</size>
+          </box>
+        </geometry>
+      </collision>
     </link>
 
     <link name="fin_2">
@@ -260,6 +284,14 @@
           </mesh>
         </geometry>
       </visual>
+
+      <collision name="fin_2_collision">
+        <geometry>
+          <box>
+             <size>0.1 0.00487804 0.1</size>
+          </box>
+        </geometry>
+      </collision>
     </link>
 
     <link name="fin_3">
@@ -284,6 +316,14 @@
           </mesh>
         </geometry>
       </visual>
+
+      <collision name="fin_3_collision">
+        <geometry>
+          <box>
+             <size>0.1 0.00487804 0.1</size>
+          </box>
+        </geometry>
+      </collision>
     </link>
 
     <!-- Joints -->
@@ -309,6 +349,8 @@
         <limit>
           <lower>-1.396263402</lower>
           <upper>1.396263402</upper>
+          <effort>-1</effort>
+          <velocity>-1</velocity>
         </limit>
       </axis>
     </joint>
@@ -322,6 +364,8 @@
         <limit>
           <lower>-1.396263402</lower>
           <upper>1.396263402</upper>
+          <effort>-1</effort>
+          <velocity>-1</velocity>
         </limit>
       </axis>
     </joint>
@@ -335,6 +379,8 @@
         <limit>
           <lower>-1.396263402</lower>
           <upper>1.396263402</upper>
+          <effort>-1</effort>
+          <velocity>-1</velocity>
         </limit>
       </axis>
     </joint>
@@ -348,6 +394,8 @@
         <limit>
           <lower>-1.396263402</lower>
           <upper>1.396263402</upper>
+          <effort>-1</effort>
+          <velocity>-1</velocity>
         </limit>
       </axis>
     </joint>
@@ -466,24 +514,32 @@
       filename="gz-sim-joint-position-controller-system"
       name="gz::sim::systems::JointPositionController">
       <joint_name>fin_0_joint</joint_name>
+      <topic>/model/lauv/joint/fin_0_joint/cmd_pos</topic>
+      <p_gain>0.1</p_gain>
     </plugin>
 
     <plugin
       filename="gz-sim-joint-position-controller-system"
       name="gz::sim::systems::JointPositionController">
       <joint_name>fin_1_joint</joint_name>
+      <topic>/model/lauv/joint/fin_1_joint/cmd_pos</topic>
+      <p_gain>0.1</p_gain>
     </plugin>
 
     <plugin
       filename="gz-sim-joint-position-controller-system"
       name="gz::sim::systems::JointPositionController">
       <joint_name>fin_2_joint</joint_name>
+      <topic>/model/lauv/joint/fin_2_joint/cmd_pos</topic>
+      <p_gain>0.1</p_gain>
     </plugin>
 
     <plugin
       filename="gz-sim-joint-position-controller-system"
       name="gz::sim::systems::JointPositionController">
       <joint_name>fin_3_joint</joint_name>
+      <topic>/model/lauv/joint/fin_3_joint/cmd_pos</topic>
+      <p_gain>0.1</p_gain>
     </plugin>
 
     <!-- Odometry publisher plugin -->
