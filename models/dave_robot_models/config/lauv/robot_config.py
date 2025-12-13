@@ -25,7 +25,8 @@ def launch_setup(context, *args, **kwargs):
             f"/model/{namespace}/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry",
             f"/model/{namespace}/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model",
             f"/model/{namespace}/imu@sensor_msgs/msg/Imu@gz.msgs.IMU",
-        ]
+            # f"/model/{namespace}/dvl/velocity@dave_interfaces/msg/DVL@gz.msgs.DVL"        
+            ]
     )
 
     lauv_bridge = Node(
@@ -37,6 +38,7 @@ def launch_setup(context, *args, **kwargs):
             (f"/model/{namespace}/joint_states", f"/{namespace}/joint_states"),
             (f"/model/{namespace}/odometry", f"/{namespace}/odometry"),
             (f"/model/{namespace}/imu", f"/{namespace}/imu"),
+            # (f"/model/{namespace}/dvl/velocity", f"/{namespace}/dvl"),
         ],
     )
 
