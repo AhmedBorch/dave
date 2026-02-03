@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11.0 FATAL_ERROR)
 project(multibeam_sonar_system)
 
 find_package(ament_cmake REQUIRED)
-find_package(CUDAToolkit QUIET)
+find_package(CUDAToolkit REQUIRED)
 
 if(CUDAToolkit_FOUND)
   find_package(gz-cmake3 REQUIRED)
@@ -57,6 +57,10 @@ if(CUDAToolkit_FOUND)
   install(TARGETS ${PROJECT_NAME}
     DESTINATION lib/${PROJECT_NAME}
   )
+
+  install(TARGETS multibeam_sonar
+  DESTINATION lib
+)
 
   # Environment hooks
   ament_environment_hooks(
