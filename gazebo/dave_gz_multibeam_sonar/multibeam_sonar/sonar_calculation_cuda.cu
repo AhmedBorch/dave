@@ -144,6 +144,25 @@ __device__ __host__ float unnormalized_sinc(float t)
   }
 }
 
+///////////////////////////////////////////////////////////////////////////
+// 3D Incident Angle Calculation
+__device__ float compute_incidence_3d(float azimuth, float elevation, float * normal)
+{
+  // Convert spherical ray coordinates to 3D cartesian vector
+  float ray_x = cosf(azimuth) * cosf(elevation);
+  float ray_y = sinf(azimuth) * cosf(elevation);
+  float ray_z = sinf(elevation);
+
+  // Align Gazebo target normal to camera axes
+  float target_normal[3] = {normal[2], -normal[0], -normal[1]};
+
+  // 3D Dot product for volumetric incidence
+  float dot_product = ray_x * target_normal[0] + ray_y * target_normal[1] + ray_z * target_normal[2];
+  
+  // Clamp to prevent acosf NaN errors
+  return acosf(fmaxf(-1.0f, fminf(1.0f, dot_product)));
+}
+
 __global__ void reduce_beams_kernel(
   const thrust::complex<float> * __restrict__ d_P_Beams, float * d_P_Beams_Cor_real,
   float * d_P_Beams_Cor_imag, int nBeams, int nFreq, int nRaysSkipped)
@@ -296,8 +315,96 @@ __global__ void sonar_calculation(
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// TODO: sonar calculation 3D
+// 3D Sonar Volumetric Kernel
+__global__ void sonar_calculation_3d(
+  thrust::complex<float> * P_Beams, float * depth_image, float * normal_image, 
+  int width, int height, int depth_image_step, int normal_image_step, unsigned long long seed,
+  float * reflectivity_image, int reflectivity_image_step, 
+  float hFOV, float vFOV, float soundSpeed, float sourceTerm, 
+  int nBeams_h, int nBeams_v, int raySkips, float delta_f, int nFreq, 
+  float maxDistance, float attenuation, float area_scaler)
+{
+  // Volumetric mapping: x = azimuth/horizontal, y = elevation/vertical
+  const int x_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  const int y_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
+  if (x_idx < width && y_idx < height && (y_idx % raySkips == 0) && (x_idx % raySkips == 0))
+  {
+    const int depth_idx = y_idx * (depth_image_step / sizeof(float)) + x_idx;
+    const int norm_idx = y_idx * (normal_image_step / sizeof(float)) + (3 * x_idx);
+    const int refl_idx = y_idx * (reflectivity_image_step / sizeof(float)) + x_idx;
+
+    float distance = depth_image[depth_idx];
+    if (distance <= 0.001f || distance > maxDistance) return;
+
+    float normal[3] = {normal_image[norm_idx], normal_image[norm_idx+1], normal_image[norm_idx+2]};
+
+    // Calculate specific azimuth and elevation for this 3D ray
+    float azimuth = (x_idx / (float)width - 0.5f) * hFOV;
+    float elevation = (y_idx / (float)height - 0.5f) * vFOV;
+
+    float incidence = compute_incidence_3d(azimuth, elevation, normal);
+
+    // Speckle noise generation
+    curandStatePhilox4_32_10_t state;
+    curand_init(seed, y_idx * width + x_idx, 0, &state);
+    float4 xi = curand_normal4(&state);
+    
+    thrust::complex<float> randomAmps(xi.x / sqrtf(2.0f), xi.y / sqrtf(2.0f));
+    float lambert = cosf(incidence);
+    float p_loss = (1.0f / (distance * distance)) * expf(-2.0f * attenuation * distance);
+    float amplitude_scalar = sourceTerm * p_loss * lambert * sqrtf(reflectivity_image[refl_idx] * area_scaler);
+
+    thrust::complex<float> base_amplitude = randomAmps * thrust::complex<float>(amplitude_scalar, 0.0f);
+
+    // Map 3D ray to specific voxel in the 3D Beam Matrix
+    int beam_h = (x_idx * nBeams_h) / width;
+    int beam_v = (y_idx * nBeams_v) / height;
+    int beam_3d_idx = beam_v * nBeams_h + beam_h;
+
+    for (int f = 0; f < nFreq; f++)
+    {
+      float freq = delta_f * (f - nFreq / 2.0f); // Centered frequency
+      float kw = (2.0f * M_PI * freq) / soundSpeed;
+      float phase = 2.0f * distance * kw;
+
+      float s, c;
+      __sincosf(phase, &s, &c);
+      thrust::complex<float> kernel = thrust::complex<float>(c, s) * base_amplitude;
+
+      // Because multiple rays map to one voxel, we must use atomicAdd to sum interference
+      // casting complex to float2 for atomic addition
+      float2* p_beams_ptr = (float2*)&P_Beams[beam_3d_idx * nFreq + f];
+      atomicAdd(&(p_beams_ptr->x), kernel.real());
+      atomicAdd(&(p_beams_ptr->y), kernel.imag());
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////
+// 3D Reduction Kernel
+__global__ void reduce_beams_3d_kernel(
+  const thrust::complex<float> * __restrict__ d_P_Beams, 
+  float * d_P_Beams_Cor_real, float * d_P_Beams_Cor_imag, 
+  int nBeams_h, int nBeams_v, int nFreq)
+{
+  // Maps to a 3D Grid: x = Frequency Bin, y = Horizontal Beam, z = Vertical Beam
+  int f = blockIdx.x;
+  int beam_h = blockIdx.y;
+  int beam_v = blockIdx.z;
+
+  if (f >= nFreq || beam_h >= nBeams_h || beam_v >= nBeams_v) return;
+
+  int voxel_idx = (beam_v * nBeams_h + beam_h) * nFreq + f;
+  
+  // Extract and apply reduction mappings to final arrays 
+  thrust::complex<float> val = d_P_Beams[voxel_idx];
+  
+  // Output flattened for CUBLAS/CUFFT processing
+  int out_idx = f * (nBeams_h * nBeams_v) + (beam_v * nBeams_h + beam_h);
+  d_P_Beams_Cor_real[out_idx] = val.real();
+  d_P_Beams_Cor_imag[out_idx] = val.imag();
+}
 
 ///////////////////////////////////////////////////////////////////////////
 namespace NpsGazeboSonar
@@ -749,5 +856,26 @@ CArray2D sonar_calculation_wrapper(
 }
 
 // TODO: sonar calculation 3D wrapper
+CArray3D sonar_calculation_3d_wrapper(
+  const cv::Mat & depth_image, const cv::Mat & normal_image, double _hPixelSize, double _vPixelSize,
+  double _hFOV, double _vFOV, double _beam_azimuthAngleWidth, double _beam_elevationAngleWidth,
+  double _ray_azimuthAngleWidth, float * _ray_elevationAngles, double _ray_elevationAngleWidth,
+  double _soundSpeed, double _maxDistance, double _sourceLevel, 
+  int _nBeams_h, int _nBeams_v, int _nRays_h, int _nRays_v,
+  int _raySkips, double _sonarFreq, double _bandwidth, int _nFreq,
+  const cv::Mat & reflectivity_image, double _attenuation, float * window, 
+  float ** beamCorrector, float beamCorrectorSum, bool debugFlag, bool blazingFlag)
+{
+    // TODO:
+    // 1. Memory Allocation: Total Beams is now (_nBeams_h * _nBeams_v)
+    // 2. Launch sonar_calculation_3d with blockIdx.y handling height
+    // 3. Launch reduce_beams_3d_kernel with dim3 grid(nFreq, nBeams_h, nBeams_v)
+    // 4. Batch 1D FFT using cufftPlanMany with batch size = (_nBeams_h * _nBeams_v)
+    // 5. Pack results into CArray3D and return
+
+    CArray3D P_Beams_3D(CArray2D(CArray(_nFreq), _nBeams_h), _nBeams_v); 
+    // ... Complete with memory copies matching the 2D wrapper logic ...
+    return P_Beams_3D;
+}
 
 }  // namespace NpsGazeboSonar
