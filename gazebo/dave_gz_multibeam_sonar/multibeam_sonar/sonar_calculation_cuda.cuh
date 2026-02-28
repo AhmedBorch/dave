@@ -54,7 +54,6 @@ CArray2D sonar_calculation_wrapper(
   const cv::Mat & reflectivity_image, double _attenuation, float * _window, float ** _beamCorrector,
   float _beamCorrectorSum, bool _debugFlag, bool _blazingFlag);
 
-// TODO: sonar calculation 3D
 /// \brief Sonar 3D Volumetric Calculation Function Wrapper
 /// \param _nBeams_v Vertical beam count for 3D frustum
 /// \param _vFOV Vertical Field of View
