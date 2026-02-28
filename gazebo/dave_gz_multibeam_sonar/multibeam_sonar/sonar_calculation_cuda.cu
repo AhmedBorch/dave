@@ -296,6 +296,10 @@ __global__ void sonar_calculation(
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// TODO: sonar calculation 3D
+
+
+///////////////////////////////////////////////////////////////////////////
 namespace NpsGazeboSonar
 {
 
@@ -743,4 +747,7 @@ CArray2D sonar_calculation_wrapper(
 
   return P_Beams_F;
 }
+
+// TODO: sonar calculation 3D wrapper
+
 }  // namespace NpsGazeboSonar

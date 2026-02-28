@@ -36,6 +36,7 @@ namespace NpsGazeboSonar
 typedef std::complex<float> Complex;
 typedef std::valarray<Complex> CArray;
 typedef std::valarray<CArray> CArray2D;
+typedef std::valarray<CArray2D> CArray3D;
 
 /// \brief CUDA Device Check Function Wrapper
 void check_cuda_init_wrapper(void);
@@ -52,4 +53,20 @@ CArray2D sonar_calculation_wrapper(
   int _raySkips, double _sonarFreq, double _bandwidth, int _nFreq,
   const cv::Mat & reflectivity_image, double _attenuation, float * _window, float ** _beamCorrector,
   float _beamCorrectorSum, bool _debugFlag, bool _blazingFlag);
+
+// TODO: sonar calculation 3D
+/// \brief Sonar 3D Volumetric Calculation Function Wrapper
+/// \param _nBeams_v Vertical beam count for 3D frustum
+/// \param _vFOV Vertical Field of View
+CArray3D sonar_calculation_3d_wrapper(
+  const cv::Mat & depth_image, const cv::Mat & normal_image, double _hPixelSize, double _vPixelSize,
+  double _hFOV, double _vFOV, double _beam_azimuthAngleWidth, double _beam_elevationAngleWidth,
+  double _ray_azimuthAngleWidth, float * _ray_elevationAngles, double _ray_elevationAngleWidth,
+  double _soundSpeed, double _maxDistance, double _sourceLevel, 
+  int _nBeams_h, int _nBeams_v, // 3D dimensions
+  int _nRays_h, int _nRays_v,
+  int _raySkips, double _sonarFreq, double _bandwidth, int _nFreq,
+  const cv::Mat & reflectivity_image, double _attenuation, float * window, 
+  float ** beamCorrector, float beamCorrectorSum, bool debugFlag, bool blazingFlag);
+
 }  // namespace NpsGazeboSonar
