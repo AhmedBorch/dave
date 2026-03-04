@@ -96,7 +96,7 @@
 
         <play_pause>true</play_pause>
         <step>true</step>
-        <start_paused>true</start_paused>
+        <start_paused>false</start_paused>
         <use_event>true</use_event>
       </plugin>
 
@@ -160,13 +160,13 @@
         <topic_picker>false</topic_picker>
       </plugin>
 
-      <plugin filename="PointCloud" name="Point Cloud">
+      <!-- <plugin filename="PointCloud" name="Point Cloud">
         <gz-gui>
           <title>3D LiDAR Points</title>
           <property type="string" key="state">docked</property>
         </gz-gui>
         <point_cloud_topic>/lidar_3d/lidar/points</point_cloud_topic>
-      </plugin>
+      </plugin> -->
 
     </gui>
 

@@ -83,7 +83,6 @@
         <always_on>1</always_on>
         <visualize>true</visualize>
         <topic>lidar</topic>
-        <gz_frame_id>lidar_3d/link</gz_frame_id>
       </sensor>
 
 
