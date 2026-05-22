@@ -18,7 +18,7 @@
       <gravity>1</gravity>
 
       <!-- Camera sensor -->
-      <sensor name="camera" type="camera">
+      <!-- <sensor name="camera" type="camera">
         <camera>
           <horizontal_fov>1.047</horizontal_fov>
           <image>
@@ -34,10 +34,10 @@
         <update_rate>30</update_rate>
         <visualize>true</visualize>
         <topic>/sensor/camera</topic>
-      </sensor>
+      </sensor> -->
 
       <!-- Depth Camera sensor -->
-      <sensor name="depth_camera" type="depth_camera">
+      <!-- <sensor name="depth_camera" type="depth_camera">
         <update_rate>10</update_rate>
         <topic>/sensor/depth_camera</topic>
         <enable_metrics>true</enable_metrics>
@@ -53,7 +53,7 @@
             <far>10.0</far>
           </clip>
         </camera>
-      </sensor>
+      </sensor> -->
 
       <!-- Replace Multibeam sonar with 3D lidar instead -->
       <sensor name="gpu_lidar" type="gpu_lidar">
@@ -63,8 +63,8 @@
           <scan>
             <horizontal>
               <!-- <samples>640</samples> -->
-              <!-- <samples>144</samples> -->
-              <samples>288</samples>
+              <!-- <samples>288</samples> -->
+              <samples>576</samples>
               <resolution>1</resolution>
               <!-- <min_angle>-3.14159</min_angle> -->
               <min_angle>-0.785398</min_angle>
@@ -73,12 +73,11 @@
             </horizontal>
             <vertical>
               <!-- <samples>16</samples> -->
-              <!-- <samples>64</samples> -->
-              <samples>128</samples>
+              <!-- <samples>128</samples> -->
+              <samples>256</samples>
               <resolution>1</resolution>
-              <!-- <min_angle>-0.261799</min_angle>
-              <max_angle>0.261799</max_angle> -->
               <min_angle>-0.349066</min_angle>
+              <!-- <max_angle>0.261799</max_angle> -->
               <max_angle>0.349066</max_angle>
             </vertical>
           </scan>

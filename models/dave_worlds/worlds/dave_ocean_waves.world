@@ -113,6 +113,14 @@
       <pose>0 0 -95 0 0 0</pose>
     </include>
 
+    <!-- LiDAR test target: placed 8 m in front of the BlueROV spawn (x=0,y=0,z=-0.5) -->
+    <include>
+      <name>mbari_mars</name>
+      <uri>https://fuel.gazebosim.org/1.0/hmoyen/models/MBARI MARS</uri>
+      <pose>8 0 -0.5 0 0 0</pose>
+      <static>true</static>
+    </include>
+
     <plugin
       filename="gz-sim-buoyancy-system"
       name="gz::sim::systems::Buoyancy">

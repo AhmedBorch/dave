@@ -170,12 +170,12 @@
 
     </gui>
 
-    <include>
+    <!-- <include>
       <uri>
         https://fuel.gazebosim.org/1.0/OpenRobotics/models/Ground Plane
       </uri>
       <pose>0 0 0 0 0 0</pose>
-    </include>
+    </include> -->
 
     <include>
       <uri>
@@ -183,12 +183,12 @@
       </uri>
     </include>
 
-    <include>
+    <!-- <include>
       <pose>6 -2 0 0 0 1.57</pose>
       <uri>
       https://fuel.gazebosim.org/1.0/hmoyen/models/basement tank
       </uri>
-    </include>
+    </include> -->
     <!-- cylinder target 1 -->
     <!-- <include>
       <uri>https://fuel.gazebosim.org/1.0/hmoyen/models/cylinder target</uri>
@@ -204,7 +204,35 @@
       <pose>3.1 1 1.5 0 1.5709 1.57</pose>
       <static>true</static>
     </include> -->
-
+    
+    <model name="fpfh_localization_target">
+      <static>true</static>
+      <!-- <pose>1.1 -1 0 0 0 0</pose>  -->
+      <pose>0 0 2.1 0 0 0.5</pose>
+      <!-- <pose>-2 0 1.5 0 0 0.3</pose> -->
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>file:///root/HOST/dave_ws/src/dave/models/custom_models/meshes/assymetric_obj5_mod.stl</uri>
+              <scale>1.0 1.0 1.0</scale> 
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>file:///root/HOST/dave_ws/src/dave/models/custom_models/meshes/assymetric_obj5_mod.stl</uri>
+              <scale>1.0 1.0 1.0</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <ambient>0.8 0.2 0.2 1</ambient>
+            <diffuse>0.8 0.2 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
 
   </world>
 </sdf>

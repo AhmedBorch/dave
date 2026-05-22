@@ -13,10 +13,10 @@ def launch_setup(context, *args, **kwargs):
     namespace = LaunchConfiguration("namespace").perform(context)
 
     thruster_joints = []
-    for thruster in range(1, 7):
+    for thruster in range(1, 9):
         thruster_joints.append(f"/model/{namespace}/joint/thruster{thruster}_joint")
 
-    bluerov2_arguments = (
+    bluerov2_heavy_lidar_3d_arguments = (
         [f"{joint}/cmd_thrust@std_msgs/msg/Float64@gz.msgs.Double" for joint in thruster_joints]
         + [f"{joint}/ang_vel@std_msgs/msg/Float64@gz.msgs.Double" for joint in thruster_joints]
         + [
@@ -29,29 +29,27 @@ def launch_setup(context, *args, **kwargs):
             f"/model/{namespace}/pose@geometry_msgs/msg/PoseArray@gz.msgs.Pose_V",
             f"/model/{namespace}/imu@sensor_msgs/msg/Imu@gz.msgs.IMU",
             f"/model/{namespace}/magnetometer@sensor_msgs/msg/MagneticField@gz.msgs.Magnetometer",
-            f"/model/{namespace}/camera/image@sensor_msgs/msg/Image@gz.msgs.Image",
+            f"/model/{namespace}/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image",
             f"/model/{namespace}/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
             f"/model/{namespace}/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan",
             f"/model/{namespace}/lidar/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
             "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
-            # Bridge model link poses as TF so point clouds follow the robot in RViz
-            f"/model/{namespace}/pose@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
         ]
     )
 
-    bluerov2_bridge = Node(
+    bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
-        arguments=bluerov2_arguments,
+        arguments=bluerov2_heavy_lidar_3d_arguments,
         output="screen",
     )
 
-    # Connect the Gazebo sensor sub-frame to its parent link frame (identity transform)
-    tf_sensor_node = Node(
+    # Publish TF from world to the lidar sensor frame so RViz can visualize point clouds
+    tf_node = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
         arguments=[
-            "--frame-id", f"{namespace}/lidar_link",
+            "--frame-id", "world",
             "--child-frame-id", f"{namespace}/lidar_link/gpu_lidar",
         ],
     )
@@ -65,8 +63,6 @@ def launch_setup(context, *args, **kwargs):
         parameters=[mavros_file, {"use_sim_time": True}],
     )
 
-    nodes = [bluerov2_bridge, tf_sensor_node, mavros_node]
-
     ardusub_params = LaunchConfiguration("ardusub_params").perform(context)
 
     ardusub_cmd = [
@@ -77,9 +73,7 @@ def launch_setup(context, *args, **kwargs):
 
     ardusub_process = ExecuteProcess(cmd=ardusub_cmd, shell=True, output="screen")
 
-    processes = [ardusub_process]
-
-    return nodes + processes
+    return [bridge, tf_node, mavros_node, ardusub_process]
 
 
 def generate_launch_description():
