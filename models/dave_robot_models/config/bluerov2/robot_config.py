@@ -56,6 +56,18 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
+    dvl_relay_script = PathJoinSubstitution(
+        [FindPackageShare("dave_robot_models"), "config", "bluerov2", "dvl_twist_relay.py"]
+    ).perform(context)
+
+    dvl_relay = ExecuteProcess(
+        cmd=[
+            "python3", dvl_relay_script,
+            "--ros-args", "-p", f"namespace:={namespace}",
+        ],
+        output="screen",
+    )
+
     mavros_file = LaunchConfiguration("mavros_file")
 
     mavros_node = Node(
@@ -65,7 +77,7 @@ def launch_setup(context, *args, **kwargs):
         parameters=[mavros_file, {"use_sim_time": True}],
     )
 
-    nodes = [bluerov2_bridge, tf_sensor_node, mavros_node]
+    nodes = [bluerov2_bridge, tf_sensor_node, mavros_node, dvl_relay]
 
     ardusub_params = LaunchConfiguration("ardusub_params").perform(context)
 

@@ -141,11 +141,13 @@
             <horizontal>
               <samples>576</samples>
               <resolution>1</resolution>
-              <min_angle>-0.785398</min_angle>
-              <max_angle>0.785398</max_angle>
+              <!-- <min_angle>-0.785398</min_angle>
+              <max_angle>0.785398</max_angle> -->
+              <min_angle>-0.2</min_angle>
+              <max_angle>0.2</max_angle>
             </horizontal>
             <vertical>
-              <samples>256</samples>
+              <samples>16</samples>
               <resolution>1</resolution>
               <min_angle>-0.349066</min_angle>
               <max_angle>0.349066</max_angle>

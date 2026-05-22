@@ -40,9 +40,8 @@
 
       <!-- IMU sensor gyro and accel data will be sent to ArduSub -->
       <sensor name="imu_sensor" type="imu">
-        <!-- Transform from the Gazebo body frame (x-forward, y-left, z-up)
-             to the ArduPilot body frame (x-forward, y-right, z-down) -->
-        <pose>0 0 0 3.142 0 0</pose>
+        <!-- ROS REP-103 body frame: x-forward, y-left, z-up -->
+        <pose>0 0 0 0 0 0</pose>
         <always_on>1</always_on>
         <update_rate>1000.0</update_rate>
         <topic>/model/bluerov2/imu</topic>
@@ -182,6 +181,97 @@
     <joint name="lidar_joint" type="fixed">
       <parent>base_link</parent>
       <child>lidar_link</child>
+    </joint>
+
+    <!-- DVL mounted on the bottom, beams pointing downward -->
+    <link name="dvl_link">
+      <pose relative_to="base_link">0 0 -0.07 0 0 0</pose>
+      <inertial>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <sensor name="nortek_dvl500_300" type="custom" gz:type="dvl">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>1</always_on>
+        <update_rate>8</update_rate>
+        <topic>/model/bluerov2/dvl/velocity</topic>
+        <gz:dvl>
+          <type>phased_array</type>
+          <arrangement degrees="true">
+            <beam id="1">
+              <aperture>3</aperture>
+              <rotation>-135</rotation>
+              <tilt>25</tilt>
+            </beam>
+            <beam>
+              <aperture>3</aperture>
+              <rotation>135</rotation>
+              <tilt>25</tilt>
+            </beam>
+            <beam>
+              <aperture>3</aperture>
+              <rotation>45</rotation>
+              <tilt>25</tilt>
+            </beam>
+            <beam>
+              <aperture>3</aperture>
+              <rotation>-45</rotation>
+              <tilt>25</tilt>
+            </beam>
+          </arrangement>
+          <tracking>
+            <water_mass_mode>
+              <when>best</when>
+              <water_velocity>
+                <x>0.</x>
+                <y>0.</y>
+                <z>0.</z>
+              </water_velocity>
+              <boundaries>
+                <near>10.</near>
+                <far>100.</far>
+              </boundaries>
+              <bins>10</bins>
+              <noise type="gaussian">
+                <stddev>0.015</stddev>
+              </noise>
+              <visualize>true</visualize>
+            </water_mass_mode>
+            <bottom_mode>
+              <when>best</when>
+              <noise type="gaussian">
+                <stddev>0.005</stddev>
+              </noise>
+              <visualize>true</visualize>
+            </bottom_mode>
+          </tracking>
+          <maximum_range>200.</maximum_range>
+          <minimum_range>0.3</minimum_range>
+          <!-- ROS REP-103: x-forward, y-left, z-up (FLU) -->
+          <reference_frame>0 0 0 0 0 0</reference_frame>
+        </gz:dvl>
+      </sensor>
+      <visual name="dvl_visual">
+        <pose>0 0 0 0 0 3.14159</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://meshes/nortek_dvl500_300/DVL500-300m.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+
+    <joint name="dvl_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>dvl_link</child>
     </joint>
 
     <!-- Hydrodynamics plugin -->
@@ -567,6 +657,12 @@
     <plugin
       filename="gz-sim-imu-system"
       name="gz::sim::systems::Imu">
+    </plugin>
+
+    <plugin
+      filename="DVLBridge"
+      name="dave_ros_gz_plugins::DVLBridge">
+      <topic>/model/bluerov2/dvl/velocity</topic>
     </plugin>
 
   </model>
