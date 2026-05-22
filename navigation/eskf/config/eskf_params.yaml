@@ -1,0 +1,58 @@
+/**:
+  eskf_node:
+    ros__parameters:
+      # ── Process noise std devs (12 values) ────────────────────────────────
+      # [accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z,
+      #  accel_bias_x, accel_bias_y, accel_bias_z,
+      #  gyro_bias_x,  gyro_bias_y,  gyro_bias_z]
+      diag_Q_std: [0.05, 0.05, 0.1, 0.01, 0.01, 0.02, 0.001, 0.001, 0.001, 0.0001, 0.0001, 0.0001]
+
+      # ── Initial error-state covariance (15 values on diagonal) ───────────
+      # [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z,
+      #  roll, pitch, yaw,
+      #  accel_bias_x, accel_bias_y, accel_bias_z,
+      #  gyro_bias_x,  gyro_bias_y,  gyro_bias_z]
+      diag_p_init: [1.0, 1.0, 1.0, 0.5, 0.5, 0.5, 0.1, 0.1, 0.1, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+
+      # ── Sensor frame transforms (sensor → base_link) ──────────────────────
+      # IMU is embedded in base_link with no rotation → identity
+      transform:
+        imu_frame_r: [ 1.0, 0.0, 0.0,
+                       0.0, 1.0, 0.0,
+                       0.0, 0.0, 1.0 ]
+        imu_frame_t: [ 0.0, 0.0, 0.0 ]
+
+        # Rz(-90°): maps DVL y-forward → ESKF x-forward, and flips z (DVL z-down → ESKF z-up)
+        dvl_frame_r: [ 1.0,  0.0,  0.0,
+                       0.0,  1.0,  0.0,
+                       0.0,  0.0,  1.0 ]
+        dvl_frame_t: [ 0.0, 0.0, 0.07 ]
+
+        depth_frame_t: [ 0.0, 0.0, 0.0 ]
+
+      # ── Topic names ────────────────────────────────────────────────────────
+      topics:
+        imu: /model/bluerov2/imu
+        dvl_twist: /model/bluerov2/dvl/twist
+        # pressure_sensor: ""
+        odom: /model/bluerov2/eskf/odom
+        pose: /model/bluerov2/eskf/pose
+        twist: /model/bluerov2/eskf/twist
+
+      # ── Behaviour flags ────────────────────────────────────────────────────
+      use_tf_transforms: false
+      publish_tf: true
+      publish_pose: true
+      publish_twist: true
+      publish_biases: true
+      publish_rate_ms: 10            # 100 Hz output
+
+      # Gazebo's IMU already outputs specific force (gravity removed internally)
+      add_gravity_to_imu: false
+
+      initial_gyro_bias:  [0.0, 0.0, 0.0]
+      initial_accel_bias: [0.0, 0.0, 0.0]
+
+      gravity: 9.82841
+      water_density: 1026.0
+      atmospheric_pressure: 101000.0
