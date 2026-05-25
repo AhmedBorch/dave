@@ -159,10 +159,13 @@ void ESKF::injection_and_reset() {
                               vortex::utils::math::eigen_vector3d_to_quaternion(
                                   current_error_state_.euler);
     current_nom_state_.quat.normalize();
-    current_nom_state_.gyro_bias =
-        current_nom_state_.gyro_bias + current_error_state_.gyro_bias;
-    current_nom_state_.accel_bias =
-        current_nom_state_.accel_bias + current_error_state_.accel_bias;
+    // DEBUG KILL SWITCH: bias injection disabled to isolate whether bias estimation
+    // is what's driving yaw drift. If yaw still drifts with this disabled, the
+    // problem is elsewhere (gyro integration, frame mismatch, physical rotation).
+    // current_nom_state_.gyro_bias =
+    //     current_nom_state_.gyro_bias + current_error_state_.gyro_bias;
+    // current_nom_state_.accel_bias =
+    //     current_nom_state_.accel_bias + current_error_state_.accel_bias;
 
     // reset
     current_error_state_.set_from_vector(Eigen::Vector15d::Zero());
@@ -197,6 +200,36 @@ Eigen::MatrixXd SensorDVL::jacobian(const StateQuat& state) const {
 
 Eigen::MatrixXd SensorDVL::noise_covariance() const {
     return this->measurement_noise;
+}
+
+// Magnetometer sensor model implementations
+
+Eigen::VectorXd SensorMag::innovation(const StateQuat& state) const {
+    // Rotate reference field from world into body frame and compare to measurement.
+    // R_nb = q.toRotationMatrix() maps body→world, so R_nb^T maps world→body.
+    Eigen::Matrix3d R_bn = state.quat.normalized().toRotationMatrix().transpose();
+    return measurement - R_bn * reference_field;
+}
+
+Eigen::MatrixXd SensorMag::jacobian(const StateQuat& state) const {
+    // h = R_bn * m_ref  (predicted measurement in body frame)
+    // With right-side attitude error:  R_nb_true = R_nb_nom * (I + [δθ×])
+    // → h_true ≈ h_nom + [h_nom×] * δθ   ⟹   ∂h/∂δθ = [h_nom×]
+    Eigen::Matrix3d R_bn = state.quat.normalized().toRotationMatrix().transpose();
+    Eigen::Vector3d h = R_bn * reference_field;
+
+    Eigen::Matrix3x15d H = Eigen::Matrix3x15d::Zero();
+    H.block<3, 3>(0, 6) = vortex::utils::math::get_skew_symmetric_matrix(h);
+    return H;
+}
+
+Eigen::MatrixXd SensorMag::noise_covariance() const {
+    return measurement_noise;
+}
+
+void ESKF::mag_update(const SensorMag& mag_meas) {
+    measurement_update(mag_meas);
+    injection_and_reset();
 }
 
 // Depth sensor model implementations

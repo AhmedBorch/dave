@@ -21,6 +21,8 @@ class ESKF {
 
     void depth_update(const SensorDepth& depth_meas);
 
+    void mag_update(const SensorMag& mag_meas);
+
     inline StateQuat get_nominal_state() const { return current_nom_state_; }
 
     inline StateEuler get_error_state() const { return current_error_state_; }

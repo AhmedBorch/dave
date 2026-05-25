@@ -135,4 +135,14 @@ struct SensorDepth {
     Eigen::MatrixXd noise_covariance() const;
 };
 
+struct SensorMag {
+    Eigen::Vector3d measurement;       // measured B-field in body frame (T)
+    Eigen::Matrix3d measurement_noise; // 3x3 noise covariance R (T²)
+    Eigen::Vector3d reference_field;   // known B-field in world frame (T)
+
+    Eigen::VectorXd innovation(const StateQuat& state) const;
+    Eigen::MatrixXd jacobian(const StateQuat& state) const;
+    Eigen::MatrixXd noise_covariance() const;
+};
+
 #endif  // ESKF__TYPEDEFS_HPP_

@@ -1,0 +1,20 @@
+<!DOCTYPE FilterScript>
+<FilterScript>
+ <filter name="Simplification: Quadric Edge Collapse Decimation">
+  <Param name="TargetPerc" value="0.05" type="RichFloat" description="Percentage reduction (0..1)"/>
+  <Param name="QualityThr" value="0.3" type="RichFloat" description="Quality threshold"/>
+  <Param name="PreserveBoundary" value="true" type="RichBool" description="Preserve Boundary of the mesh"/>
+  <Param name="BoundaryWeight" value="1" type="RichFloat" description="Boundary Preserving Weight"/>
+  <Param name="PreserveNormal" value="true" type="RichBool" description="Preserve Normal"/>
+  <Param name="PreserveTopology" value="true" type="RichBool" description="Preserve Topology"/>
+  <Param name="OptimalPlacement" value="true" type="RichBool" description="Optimal position of simplified vertices"/>
+  <Param name="PlanarQuadric" value="true" type="RichBool" description="Planar Simplification"/>
+  <Param name="PlanarWeight" value="0.001" type="RichFloat" description="Planar Simp. Weight"/>
+  <Param name="QualityWeight" value="false" type="RichBool" description="Weighted Simplification"/>
+  <Param name="AutoClean" value="true" type="RichBool" description="Post-simplification cleaning"/>
+  <Param name="Selected" value="false" type="RichBool" description="Simplify only selected faces"/>
+ </filter>
+ <filter name="Re-Compute Vertex Normals">
+  <Param name="weightMode" value="0" type="RichEnum" enum_cardinality="4" enum_val0="Simple Average" enum_val1="By Area" enum_val2="By Angle" enum_val3="As defined by N. Max" description="Weighting Mode:"/>
+ </filter>
+</FilterScript>

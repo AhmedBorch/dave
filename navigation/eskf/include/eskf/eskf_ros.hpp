@@ -14,6 +14,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/fluid_pressure.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/magnetic_field.hpp>
 #include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
@@ -39,6 +40,8 @@ class ESKFNode : public rclcpp::Node {
         const geometry_msgs::msg::TwistWithCovarianceStamped::SharedPtr msg);
 
     void depth_callback(const sensor_msgs::msg::FluidPressure::SharedPtr msg);
+
+    void mag_callback(const sensor_msgs::msg::MagneticField::SharedPtr msg);
 
     // @brief Publish the odometry message
     void publish_odom();
@@ -68,6 +71,8 @@ class ESKFNode : public rclcpp::Node {
         geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr dvl_sub_;
 
     rclcpp::Subscription<sensor_msgs::msg::FluidPressure>::SharedPtr depth_sub_;
+
+    rclcpp::Subscription<sensor_msgs::msg::MagneticField>::SharedPtr mag_sub_;
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 
@@ -110,6 +115,9 @@ class ESKFNode : public rclcpp::Node {
     Eigen::Vector3d T_dvl_eskf_{};
 
     Eigen::Vector3d T_depth_eskf_{};
+
+    Eigen::Vector3d mag_reference_field_{};  // world-frame B-field (T)
+    Eigen::Matrix3d mag_noise_{};            // measurement noise covariance (T²)
 
     rclcpp::Time last_imu_time_{};
 
