@@ -4,38 +4,45 @@ goto_planner:
     # odom_topic: /model/bluerov2/eskf/odom
     odom_topic: /model/bluerov2/odometry
 
-    goal_x: 0.0
-    goal_y: 2.0
+    goal_x: 3.0
+    goal_y: 1.0
     goal_z: -1.0
+    # goal_yaw: 0.0              # rad ENU (0=East, 1.5708=North). Omit to skip ORIENT stage.
 
     # Tolerances
-    xy_tolerance: 0.7          # m — declare goal reached inside this radius
-    z_tolerance:  0.5          # m
+    xy_tolerance:  0.7           # m — APPROACH bubble radius
+    z_tolerance:   0.5           # m
+    yaw_tolerance: 0.1           # rad — ORIENT done threshold
+
+    # Velocity thresholds for "stopped" decision before SETTLE begins
+    v_lin_stop: 0.09             # m/s
+    v_ang_stop: 0.09             # rad/s
+
+    # Time to damp velocity in SETTLE before starting ORIENT (s)
+    settle_time: 2.0
 
     # LOS surge profile
-    # Surge thrust = max_surge_cmd * tanh(dist / slow_radius) * cos(yaw_err)
-    # slow_radius: distance at which surge begins to ramp down noticeably.
-    # Smaller = tighter braking zone, but may cause oscillation if too small.
-    slow_radius: 1.5           # m
+    # Surge = max_surge_cmd * tanh(dist / slow_radius) * cos(yaw_err)
+    slow_radius: 1.5             # m
 
     # Proportional gains
-    k_yaw:   3.0               # N per rad of heading error
-    k_heave: 6.0               # N per m of depth error
+    k_yaw:   3.0                 # N per rad
+    k_heave: 6.0                 # N per m
 
-    # Derivative (velocity damping) gains
-    k_d_surge: 5.0             # N per (m/s) forward speed  — increase to damp overshoot
-    k_d_yaw:   1.5             # N per (rad/s) yaw rate
-    k_d_heave: 3.0             # N per (m/s) heave speed
+    # Derivative (damping) gains
+    k_d_surge: 5.0               # N per (m/s)
+    k_d_yaw:   1.5               # N per (rad/s)
+    k_d_heave: 3.0               # N per (m/s)
 
     # Saturation
-    max_thrust:    4.0        # N per thruster
-    max_surge_cmd:  3.0        # N — cruise thrust magnitude (scale down if too aggressive)
-    max_yaw_cmd:    4.0        # N
-    max_heave_cmd:  4.0        # N
+    max_thrust:    4.0           # N per thruster
+    max_surge_cmd: 3.0           # N — cruise thrust
+    max_yaw_cmd:   4.0           # N
+    max_heave_cmd: 4.0           # N
 
     control_rate_hz: 20.0
 
-
-    #velocity limits
-    v_lin_stop: 0.09
-    v_ang_stop: 0.09
+    # Set true if the robot turns the wrong way when approaching a y≠0 goal.
+    # Watch ~/debug/yaw_err: it should shrink toward 0 while APPROACH is active.
+    # If it grows instead, flip this flag.
+    invert_yaw: true

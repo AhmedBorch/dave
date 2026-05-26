@@ -43,9 +43,33 @@
         <!-- ROS REP-103 body frame: x-forward, y-left, z-up -->
         <pose>0 0 0 0 0 0</pose>
         <always_on>1</always_on>
-        <update_rate>1000.0</update_rate>
+        <update_rate>100.0</update_rate>
         <topic>/model/bluerov2/imu</topic>
+        <imu>
+          <angular_velocity>
+            <x><noise type="gaussian"><mean>0</mean><stddev>0.005</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>0.005</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.005</stddev></noise></z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x><noise type="gaussian"><mean>0</mean><stddev>0.02</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>0.02</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.02</stddev></noise></z>
+          </linear_acceleration>
+        </imu>
       </sensor>
+
+      <!-- <sensor name="magnetometer" type="magnetometer">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>1</always_on>
+        <update_rate>10.0</update_rate>
+        <topic>/model/bluerov2/magnetometer</topic>
+        <magnetometer>
+          <x><noise type="gaussian"><mean>0</mean><stddev>2e-4</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0</mean><stddev>2e-4</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0</mean><stddev>2e-4</stddev></noise></z>
+        </magnetometer>
+      </sensor> -->
 
     </link>
 
@@ -154,13 +178,17 @@
         <lidar>
           <scan>
             <horizontal>
-              <samples>576</samples>
+              <!-- <samples>576</samples> -->
+              <!-- <samples>160</samples> -->
+              <samples>220</samples>
               <resolution>1</resolution>
               <min_angle>-0.785398</min_angle>
               <max_angle>0.785398</max_angle>
             </horizontal>
             <vertical>
-              <samples>256</samples>
+              <!-- <samples>256</samples> -->
+              <!-- <samples>80</samples> -->
+              <samples>120</samples>
               <resolution>1</resolution>
               <min_angle>-0.349066</min_angle>
               <max_angle>0.349066</max_angle>
@@ -564,82 +592,6 @@
       <use_angvel_cmd>False</use_angvel_cmd>
     </plugin>
 
-    <plugin name="ArduPilotPlugin" filename="libArduPilotPlugin.so">
-      <!-- Port settings -->
-      <fdm_addr>127.0.0.1</fdm_addr>
-      <fdm_port_in>9002</fdm_port_in>
-      <connectionTimeoutMaxCount>5</connectionTimeoutMaxCount>
-      <lock_step>1</lock_step>
-
-      <!-- Transform from the Gazebo body frame (x-forward, y-left, z-up)
-           to the ArduPilot body frame (x-forward, y-right, z-down) -->
-      <modelXYZToAirplaneXForwardZDown>0 0 0 3.142 0 0</modelXYZToAirplaneXForwardZDown>
-
-      <!-- Transform from the Gazebo world frame (ENU)
-           to the ArduPilot world frame (North-East-Down) -->
-      <gazeboXYZToNED>0 0 0 3.142 0 1.571</gazeboXYZToNED>
-
-      <!-- Sensors -->
-      <imuName>imu_sensor</imuName>
-
-      <!-- Thrusters -->
-      <control channel="0">
-        <jointName>thruster1_joint</jointName>
-        <servo_min>1100</servo_min>
-        <servo_max>1900</servo_max>
-        <type>COMMAND</type>
-        <cmd_topic>/model/bluerov2/joint/thruster1_joint/cmd_thrust</cmd_topic>
-        <offset>-0.5</offset>
-        <multiplier>100</multiplier>
-      </control>
-      <control channel="1">
-        <jointName>thruster2_joint</jointName>
-        <servo_min>1100</servo_min>
-        <servo_max>1900</servo_max>
-        <type>COMMAND</type>
-        <cmd_topic>/model/bluerov2/joint/thruster2_joint/cmd_thrust</cmd_topic>
-        <offset>-0.5</offset>
-        <multiplier>100</multiplier>
-      </control>
-      <control channel="2">
-        <jointName>thruster3_joint</jointName>
-        <servo_min>1100</servo_min>
-        <servo_max>1900</servo_max>
-        <type>COMMAND</type>
-        <cmd_topic>/model/bluerov2/joint/thruster3_joint/cmd_thrust</cmd_topic>
-        <offset>-0.5</offset>
-        <multiplier>100</multiplier>
-      </control>
-      <control channel="3">
-        <jointName>thruster4_joint</jointName>
-        <servo_min>1100</servo_min>
-        <servo_max>1900</servo_max>
-        <type>COMMAND</type>
-        <cmd_topic>/model/bluerov2/joint/thruster4_joint/cmd_thrust</cmd_topic>
-        <offset>-0.5</offset>
-        <multiplier>100</multiplier>
-      </control>
-      <control channel="4">
-        <jointName>thruster5_joint</jointName>
-        <servo_min>1100</servo_min>
-        <servo_max>1900</servo_max>
-        <type>COMMAND</type>
-        <cmd_topic>/model/bluerov2/joint/thruster5_joint/cmd_thrust</cmd_topic>
-        <offset>-0.5</offset>
-        <multiplier>100</multiplier>
-      </control>
-      <control channel="5">
-        <jointName>thruster6_joint</jointName>
-        <servo_min>1100</servo_min>
-        <servo_max>1900</servo_max>
-        <type>COMMAND</type>
-        <cmd_topic>/model/bluerov2/joint/thruster6_joint/cmd_thrust</cmd_topic>
-        <offset>-0.5</offset>
-        <multiplier>100</multiplier>
-      </control>
-
-    </plugin>
-
     <plugin
       filename="gz-sim-odometry-publisher-system"
       name="gz::sim::systems::OdometryPublisher">
@@ -657,6 +609,24 @@
     <plugin
       filename="gz-sim-imu-system"
       name="gz::sim::systems::Imu">
+    </plugin>
+
+    <!-- <plugin
+      filename="gz-sim-magnetometer-system"
+      name="gz::sim::systems::Magnetometer">
+    </plugin> -->
+
+    <!-- Sea Pressure Sensor Plugin -->
+    <plugin
+      filename="sea_pressure_sensor"
+      name=" dave_gz_sensor_plugins::SubseaPressureSensorPlugin">
+      <namespace>bluerov2</namespace>
+      <topic>sea_pressure</topic>
+      <update_rate>10</update_rate>
+      <noise_sigma>3.0</noise_sigma>
+      <estimate_depth_on>false</estimate_depth_on>
+      <standard_pressure>101.325</standard_pressure>
+      <kPa_per_meter>9.80638</kPa_per_meter>
     </plugin>
 
     <plugin

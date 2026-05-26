@@ -114,12 +114,36 @@
     </include>
 
     <!-- LiDAR test target: placed 8 m in front of the BlueROV spawn (x=0,y=0,z=-0.5) -->
-    <include>
+    <!-- <include>
       <name>mbari_mars</name>
       <uri>https://fuel.gazebosim.org/1.0/hmoyen/models/MBARI MARS</uri>
       <pose>8 0 -0.5 0 0 0</pose>
       <static>true</static>
-    </include>
+    </include> -->
+
+    <!-- Map-matching reference structure (rig.dae) -->
+    <model name="rig">
+      <static>true</static>
+      <pose>8 0 -0.5 0 0 2.6</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>file:///root/HOST/dave_ws/src/dave/navigation/map_matching/maps/rig_decimated_small.dae</uri>
+              <scale>1.0 1.0 1.0</scale>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>file:///root/HOST/dave_ws/src/dave/navigation/map_matching/maps/rig_decimated_small.dae</uri>
+              <scale>1.0 1.0 1.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
 
     <plugin
       filename="gz-sim-buoyancy-system"

@@ -24,6 +24,7 @@ setup(
     entry_points={
         'console_scripts': [
             'goto_planner = goto_planner.node:main',
+            'joy_teleop    = goto_planner.joy_teleop:main',
         ],
     },
 )

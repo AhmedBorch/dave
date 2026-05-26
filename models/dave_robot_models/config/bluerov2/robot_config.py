@@ -56,6 +56,49 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
+    # Static mount of lidar_link relative to base_link (from model.sdf: pose 0.25 0 0.05)
+    tf_lidar_mount_node = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=[
+            "--x", "0.25", "--y", "0.0", "--z", "0.05",
+            "--frame-id", f"{namespace}/base_link",
+            "--child-frame-id", f"{namespace}/lidar_link",
+        ],
+    )
+
+    # map → odom: static identity because the ESKF is initialized in the map frame
+    # and map_matcher corrections are absorbed into the ESKF state, not this transform.
+    tf_map_odom_node = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=[
+            "--frame-id", "map",
+            "--child-frame-id", f"{namespace}/odom",
+        ],
+    )
+
+    # IMU sensor lives inside base_link with no offset (model.sdf: imu_sensor in base_link)
+    tf_imu_mount_node = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=[
+            "--frame-id", f"{namespace}/base_link",
+            "--child-frame-id", f"{namespace}/imu_link",
+        ],
+    )
+
+    # DVL mounted below base_link (from model.sdf: pose 0 0 -0.07)
+    tf_dvl_mount_node = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=[
+            "--x", "0.0", "--y", "0.0", "--z", "-0.07",
+            "--frame-id", f"{namespace}/base_link",
+            "--child-frame-id", f"{namespace}/dvl_link",
+        ],
+    )
+
     dvl_relay_script = PathJoinSubstitution(
         [FindPackageShare("dave_robot_models"), "config", "bluerov2", "dvl_twist_relay.py"]
     ).perform(context)
@@ -77,7 +120,7 @@ def launch_setup(context, *args, **kwargs):
         parameters=[mavros_file, {"use_sim_time": True}],
     )
 
-    nodes = [bluerov2_bridge, tf_sensor_node, mavros_node, dvl_relay]
+    nodes = [bluerov2_bridge, tf_sensor_node, tf_lidar_mount_node, tf_imu_mount_node, tf_dvl_mount_node, tf_map_odom_node, mavros_node, dvl_relay]
 
     ardusub_params = LaunchConfiguration("ardusub_params").perform(context)
 
@@ -85,6 +128,7 @@ def launch_setup(context, *args, **kwargs):
         "ardusub -S -w -M gazebo --defaults "
         + ardusub_params
         + " -IO --home 44.65870,-124.06556,0.0,270.0"
+        + " --sim-address 127.0.0.1 --sim-port-in 9003 --sim-port-out 9002"
     ]
 
     ardusub_process = ExecuteProcess(cmd=ardusub_cmd, shell=True, output="screen")

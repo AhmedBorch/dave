@@ -77,6 +77,10 @@ class MapMatchingNode(Node):
         self.declare_parameter('uncertainty.base_translation_var', 1e-3)
         self.declare_parameter('uncertainty.base_rotation_var', 1e-4)
 
+        # Fault check
+        self.declare_parameter('roll_pitch_limit_deg', 10.0)
+        self.declare_parameter('max_ransac_retries', 3)
+
     def _load_full_map(self) -> None:
         path = self.get_parameter('full_map_path').get_parameter_value().string_value
         if not path or not os.path.isfile(path):
@@ -102,6 +106,8 @@ class MapMatchingNode(Node):
                 base_translation_var=gp('uncertainty.base_translation_var').get_parameter_value().double_value,
                 base_rotation_var=gp('uncertainty.base_rotation_var').get_parameter_value().double_value,
             ),
+            roll_pitch_limit_deg=gp('roll_pitch_limit_deg').get_parameter_value().double_value,
+            max_ransac_retries=gp('max_ransac_retries').get_parameter_value().integer_value,
         )
 
     def _build_structure_pose(self) -> np.ndarray:
@@ -128,6 +134,13 @@ class MapMatchingNode(Node):
 
         result = run(submap, self._full_map, self._T_world_struct, self._params)
 
+        if not result.is_valid:
+            self.get_logger().warn(
+                f'Registration rejected: roll={result.roll_deg:.1f}° pitch={result.pitch_deg:.1f}° '
+                f'(limit ±{self._params.roll_pitch_limit_deg:.0f}°) after {result.attempts} attempt(s) — not publishing.'
+            )
+            return
+
         out = PoseWithCovarianceStamped()
         out.header.stamp = msg.header.stamp
         out.header.frame_id = self._world_frame
@@ -135,7 +148,8 @@ class MapMatchingNode(Node):
         self._pub.publish(out)
 
         self.get_logger().info(
-            f'GICP fitness={result.gicp.fitness:.3f} rmse={result.gicp.inlier_rmse:.3f}m'
+            f'GICP fitness={result.gicp.fitness:.3f} rmse={result.gicp.inlier_rmse:.3f}m  '
+            f'roll={result.roll_deg:.1f}° pitch={result.pitch_deg:.1f}° attempts={result.attempts}'
         )
 
 

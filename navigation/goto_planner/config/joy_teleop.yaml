@@ -1,0 +1,47 @@
+joy_teleop:
+  ros__parameters:
+    namespace: bluerov2
+
+    # ── Axis mapping ──────────────────────────────────────────────────────────
+    # Standard indices for PS4 / Xbox controller via the ROS 2 joy driver.
+    # Run `ros2 topic echo /joy` and move each stick to verify your controller.
+    #
+    #  Index │ PS4              │ Xbox
+    #  ──────┼──────────────────┼─────────────────
+    #    0   │ Left  stick X    │ Left  stick X
+    #    1   │ Left  stick Y    │ Left  stick Y
+    #    2   │ L2 (analog)      │ Left  trigger
+    #    3   │ Right stick X    │ Right stick X
+    #    4   │ Right stick Y    │ Right stick Y
+    #    5   │ R2 (analog)      │ Right trigger
+    axis_surge: 1   # left  stick Y  — up   = forward
+    axis_yaw:   0   # left  stick X  — left = CCW (positive yaw in ENU)
+    axis_heave: 4   # right stick Y  — up   = ascend
+
+    # ── Sign flips ────────────────────────────────────────────────────────────
+    # Set true if a channel moves opposite to the stick direction.
+    # The same invert_yaw issue that affects goto_planner applies here:
+    # if the robot yaws the wrong way, flip this.
+    invert_surge: false
+    invert_yaw:   false
+    invert_heave: false
+
+    # ── Scale (max command per axis, N) ──────────────────────────────────────
+    max_surge:  3.0
+    max_yaw:    2.0
+    max_heave:  3.0
+    max_thrust: 4.0   # per-thruster hard clip
+
+    # ── Deadman button ────────────────────────────────────────────────────────
+    # Hold this button to enable thrust; release → all thrusters zero.
+    # -1 disables the deadman (always enabled — only for bench testing).
+    #
+    #  Index │ PS4  │ Xbox
+    #  ──────┼──────┼──────
+    #    0   │ X    │ A
+    #    1   │ O    │ B
+    #    2   │ □    │ X
+    #    3   │ △    │ Y
+    #    4   │ L1   │ LB      ← default
+    #    5   │ R1   │ RB
+    deadman_button: 4   # L1 / LB

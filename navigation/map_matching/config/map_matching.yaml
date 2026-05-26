@@ -1,7 +1,10 @@
 map_matching:
   ros__parameters:
-    # Full reference map of the structure (PCD), expressed in the structure's frame.
-    full_map_path: ""
+    # Full reference map of the structure (PCD), expressed in the structure's local frame.
+    # Two options are available in the maps/ directory:
+    #   instruments_rig.pcd  — full structure reference
+    #   lidar_frame.pcd      — single lidar frame capture
+    full_map_path: ""   # ← set this to the absolute install path or pass via launch arg
 
     # I/O topics
     input_cloud_topic: /model/bluerov2/lidar/points
@@ -10,8 +13,9 @@ map_matching:
     # World/output frame for the published pose.
     world_frame: map
 
-    # Pose of the structure in the world frame.
-    structure_position: [0.0, 0.0, 0.0]
+    # Pose of the structure origin in the world frame (ENU, metres + xyzw quaternion).
+    # Set this to wherever the structure is spawned in Gazebo.
+    structure_position: [3.0, 1.0, 0.0]
     structure_orientation_xyzw: [0.0, 0.0, 0.0, 1.0]
 
     # RANSAC coarse alignment
@@ -19,13 +23,18 @@ map_matching:
       voxel_size: 0.3
       max_iterations: 100000
 
-    # GICP refinement (placeholder backend: Open3D Generalized ICP)
+    # GICP refinement
     gicp:
       max_correspondence_distance: 0.5
       max_iterations: 50
       voxel_size: 0.05
 
-    # Uncertainty estimator (placeholder)
+    # Uncertainty estimator
     uncertainty:
       base_translation_var: 0.01
       base_rotation_var: 0.001
+
+    # Fault check: reject results whose recovered roll or pitch exceeds this.
+    # RANSAC is rerun (stochastic) up to max_ransac_retries times before giving up.
+    roll_pitch_limit_deg: 10.0
+    max_ransac_retries: 3
