@@ -2,10 +2,10 @@
 
 Control stages
 --------------
-APPROACH  – LOS guidance: yaw to align with goal then surge toward it (+ heave).
-SETTLE    – velocity damping only; wait settle_time seconds before orienting.
-ORIENT    – pure yaw to goal_yaw (if given), heave PD to hold depth.
-DONE      – velocity damping; holds position indefinitely.
+APPROACH  - LOS guidance: yaw to align with goal then surge toward it (+ heave).
+SETTLE    - velocity damping only; wait settle_time seconds before orienting.
+ORIENT    - pure yaw to goal_yaw (if given), heave PD to hold depth.
+DONE      - velocity damping; holds position indefinitely.
 
 The two-stage split (APPROACH then ORIENT) avoids the ill-conditioned atan2
 near the goal and allows a clean final heading for inspection tasks.

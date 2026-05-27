@@ -49,7 +49,7 @@
           <angular_velocity>
             <x><noise type="gaussian"><mean>0</mean><stddev>0.005</stddev></noise></x>
             <y><noise type="gaussian"><mean>0</mean><stddev>0.005</stddev></noise></y>
-            <z><noise type="gaussian"><mean>0</mean><stddev>0.005</stddev></noise></z>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.0005</stddev></noise></z>
           </angular_velocity>
           <linear_acceleration>
             <x><noise type="gaussian"><mean>0</mean><stddev>0.02</stddev></noise></x>
@@ -59,7 +59,7 @@
         </imu>
       </sensor>
 
-      <!-- <sensor name="magnetometer" type="magnetometer">
+      <sensor name="magnetometer" type="magnetometer">
         <pose>0 0 0 0 0 0</pose>
         <always_on>1</always_on>
         <update_rate>10.0</update_rate>
@@ -69,54 +69,54 @@
           <y><noise type="gaussian"><mean>0</mean><stddev>2e-4</stddev></noise></y>
           <z><noise type="gaussian"><mean>0</mean><stddev>2e-4</stddev></noise></z>
         </magnetometer>
-      </sensor> -->
-
-    </link>
-
-    <link name="camera_link">
-      <pose relative_to="camera_mount_link">0 0 0 0 0 0</pose>
-      <inertial>
-        <mass>0.0001</mass>
-        <inertia>
-          <ixx>0.0001</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.0001</iyy>
-          <iyz>0</iyz>
-          <izz>0.0001</izz>
-        </inertia>
-      </inertial>
-      <sensor name="underwater_camera" type="rgbd_camera">
-        <update_rate>10</update_rate>
-        <visualize>true</visualize>
-        <always_on>1</always_on>
-        <topic>/model/bluerov2/camera</topic>
-        <camera>
-          <horizontal_fov>1.05</horizontal_fov>
-          <image>
-            <width>1920</width>
-            <height>1080</height>
-          </image>
-          <clip>
-            <near>0.1</near>
-            <far>10.0</far>
-          </clip>
-        </camera>
-        <plugin
-          filename="UnderwaterCamera"
-          name="dave_gz_sensor_plugins::UnderwaterCamera">
-          <attenuationR>0.8</attenuationR>
-          <attenuationG>0.5</attenuationG>
-          <attenuationB>0.2</attenuationB>
-          <!-- Murky Coastal Waters -->
-          <backgroundR>85</backgroundR>
-          <backgroundG>107</backgroundG>
-          <backgroundB>47</backgroundB>
-        </plugin>
       </sensor>
+
     </link>
 
-    <link name="camera_mount_link">
+    <!-- <link name="camera_link"> -->
+      <!-- <pose relative_to="camera_mount_link">0 0 0 0 0 0</pose> -->
+      <!-- <inertial> -->
+        <!-- <mass>0.0001</mass> -->
+        <!-- <inertia> -->
+          <!-- <ixx>0.0001</ixx> -->
+          <!-- <ixy>0</ixy> -->
+          <!-- <ixz>0</ixz> -->
+          <!-- <iyy>0.0001</iyy> -->
+          <!-- <iyz>0</iyz> -->
+          <!-- <izz>0.0001</izz> -->
+        <!-- </inertia> -->
+      <!-- </inertial> -->
+      <!-- <sensor name="underwater_camera" type="rgbd_camera"> -->
+        <!-- <update_rate>10</update_rate> -->
+        <!-- <visualize>true</visualize> -->
+        <!-- <always_on>1</always_on> -->
+        <!-- <topic>/model/bluerov2/camera</topic> -->
+        <!-- <camera> -->
+          <!-- <horizontal_fov>1.05</horizontal_fov> -->
+          <!-- <image> -->
+            <!-- <width>1920</width> -->
+            <!-- <height>1080</height> -->
+          <!-- </image> -->
+          <!-- <clip> -->
+            <!-- <near>0.1</near> -->
+            <!-- <far>10.0</far> -->
+          <!-- </clip> -->
+        <!-- </camera> -->
+        <!-- <plugin -->
+          <!-- filename="UnderwaterCamera" -->
+          <!-- name="dave_gz_sensor_plugins::UnderwaterCamera"> -->
+          <!-- <attenuationR>0.8</attenuationR> -->
+          <!-- <attenuationG>0.5</attenuationG> -->
+          <!-- <attenuationB>0.2</attenuationB> -->
+          <!-- Murky Coastal Waters -->
+          <!-- <backgroundR>85</backgroundR> -->
+          <!-- <backgroundG>107</backgroundG> -->
+          <!-- <backgroundB>47</backgroundB> -->
+        <!-- </plugin> -->
+      <!-- </sensor> -->
+    <!-- </link> -->
+
+    <!-- <link name="camera_mount_link">
       <pose relative_to="base_link">0.19 0 0.067 0 0 0</pose>
       <inertial>
         <mass>0.0001</mass>
@@ -129,17 +129,17 @@
           <izz>0.0001</izz>
         </inertia>
       </inertial>
-    </link>
+    </link> -->
 
-    <joint name="camera_joint" type="fixed">
+    <!-- <joint name="camera_joint" type="fixed">
       <parent>camera_mount_link</parent>
       <child>camera_link</child>
-    </joint>
+    </joint> -->
 
-    <joint name="camera_mount_joint" type="fixed">
+    <!-- <joint name="camera_mount_joint" type="fixed">
       <parent>base_link</parent>
       <child>camera_mount_link</child>
-    </joint>
+    </joint> -->
 
     <!-- 3D LiDAR mounted at the front of the robot -->
     <link name="lidar_link">
@@ -178,17 +178,17 @@
         <lidar>
           <scan>
             <horizontal>
-              <!-- <samples>576</samples> -->
+              <samples>576</samples>
               <!-- <samples>160</samples> -->
-              <samples>220</samples>
+              <!-- <samples>260</samples> -->
               <resolution>1</resolution>
               <min_angle>-0.785398</min_angle>
               <max_angle>0.785398</max_angle>
             </horizontal>
             <vertical>
-              <!-- <samples>256</samples> -->
+              <samples>256</samples>
               <!-- <samples>80</samples> -->
-              <samples>120</samples>
+              <!-- <samples>120</samples> -->
               <resolution>1</resolution>
               <min_angle>-0.349066</min_angle>
               <max_angle>0.349066</max_angle>
@@ -611,10 +611,10 @@
       name="gz::sim::systems::Imu">
     </plugin>
 
-    <!-- <plugin
+    <plugin
       filename="gz-sim-magnetometer-system"
       name="gz::sim::systems::Magnetometer">
-    </plugin> -->
+    </plugin>
 
     <!-- Sea Pressure Sensor Plugin -->
     <plugin

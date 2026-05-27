@@ -52,20 +52,24 @@ class MatchResult:
     coarse_transform: np.ndarray  # 4x4 from the RANSAC step that produced this result
     roll_deg: float             # recovered roll  (deg, ZYX Euler)
     pitch_deg: float            # recovered pitch (deg, ZYX Euler)
+    yaw_deg: float              # recovered yaw   (deg, ZYX Euler)
     is_valid: bool              # False if roll/pitch exceeded roll_pitch_limit_deg
     attempts: int               # number of RANSAC runs used
 
 
-def _roll_pitch_deg(T: np.ndarray):
-    """Extract roll and pitch in degrees from a 4x4 pose matrix (ZYX Euler)."""
+def _euler_deg(T: np.ndarray):
+    """Extract roll, pitch, yaw in degrees from a 4x4 pose matrix (ZYX Euler)."""
     R = T[:3, :3]
     # ZYX convention: R = Rz(yaw) @ Ry(pitch) @ Rx(roll)
     #   R[2,0] = -sin(pitch)
     #   R[2,1] =  cos(pitch)*sin(roll)
     #   R[2,2] =  cos(pitch)*cos(roll)
+    #   R[1,0] =  cos(yaw)*sin(pitch)*sin(roll) + sin(yaw)*cos(roll)  -> simplified below
+    #   R[0,0] =  cos(yaw)*cos(pitch)
     pitch = math.degrees(math.asin(float(np.clip(-R[2, 0], -1.0, 1.0))))
     roll  = math.degrees(math.atan2(float(R[2, 1]), float(R[2, 2])))
-    return roll, pitch
+    yaw   = math.degrees(math.atan2(float(R[1, 0]), float(R[0, 0])))
+    return roll, pitch, yaw
 
 
 def run(submap: o3d.geometry.PointCloud,
@@ -86,8 +90,8 @@ def run(submap: o3d.geometry.PointCloud,
         pose_world  = T_world_struct @ gicp_result.transformation
         cov         = estimate(gicp_result, params.uncertainty)
 
-        roll, pitch = _roll_pitch_deg(pose_world)
-        is_valid    = abs(roll) <= limit and abs(pitch) <= limit
+        roll, pitch, yaw = _euler_deg(pose_world)
+        is_valid         = abs(roll) <= limit and abs(pitch) <= limit
 
         result = MatchResult(
             pose_world=pose_world,
@@ -96,6 +100,7 @@ def run(submap: o3d.geometry.PointCloud,
             coarse_transform=T_coarse,
             roll_deg=roll,
             pitch_deg=pitch,
+            yaw_deg=yaw,
             is_valid=is_valid,
             attempts=attempt,
         )

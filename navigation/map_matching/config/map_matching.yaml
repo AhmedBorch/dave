@@ -15,8 +15,14 @@ map_matching:
 
     # Pose of the structure origin in the world frame (ENU, metres + xyzw quaternion).
     # Set this to wherever the structure is spawned in Gazebo.
-    structure_position: [3.0, 1.0, 0.0]
-    structure_orientation_xyzw: [0.0, 0.0, 0.0, 1.0]
+    structure_position: [8.0, 0.0, -2.5]
+    structure_orientation_xyzw: [0.0, 0.0, 0.8415, 0.5403]  # yaw = 2.0 rad exactly (world file)
+
+    # Lidar mount in base_link frame — from model.sdf:
+    #   <pose relative_to="base_link">0.25 0 0.05 0 0 0</pose>
+    # Used to convert T_world_lidar → T_world_baselink.
+    lidar_position: [0.25, 0.0, 0.05]
+    lidar_orientation_xyzw: [0.0, 0.0, 0.0, 1.0]
 
     # RANSAC coarse alignment
     ransac:
@@ -38,3 +44,11 @@ map_matching:
     # RANSAC is rerun (stochastic) up to max_ransac_retries times before giving up.
     roll_pitch_limit_deg: 10.0
     max_ransac_retries: 3
+
+    # Voting / mode filter (replaces running average).
+    # Keep the last vote_buffer_size valid estimates; publish the centroid of the
+    # densest cluster (poses within vote_cluster_radius metres of each other).
+    # Outlier RANSAC results that land far from the true position will form small
+    # minority clusters and be ignored.
+    vote_buffer_size: 30
+    vote_cluster_radius: 0.3

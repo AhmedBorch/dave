@@ -4,6 +4,7 @@ import open3d as o3d
 from geometry_msgs.msg import Pose, PoseWithCovariance, Quaternion
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py import point_cloud2 as pc2
+from std_msgs.msg import Header
 
 
 def pointcloud2_to_open3d(msg: PointCloud2) -> o3d.geometry.PointCloud:
@@ -82,6 +83,12 @@ def pose_with_covariance(T: np.ndarray, cov_6x6: np.ndarray) -> PoseWithCovarian
     msg.pose = matrix_to_pose(T)
     msg.covariance = cov_6x6.flatten().tolist()
     return msg
+
+
+def open3d_to_pointcloud2(cloud: o3d.geometry.PointCloud, header: Header) -> PointCloud2:
+    """Convert an Open3D PointCloud to a sensor_msgs/PointCloud2."""
+    points = np.asarray(cloud.points, dtype=np.float32)
+    return pc2.create_cloud_xyz32(header, points)
 
 
 def pose_to_matrix(xyz, quat_xyzw) -> np.ndarray:
