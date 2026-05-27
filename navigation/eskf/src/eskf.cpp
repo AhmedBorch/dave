@@ -252,3 +252,40 @@ Eigen::MatrixXd SensorDepth::noise_covariance() const {
     R(0, 0) = this->measurement_noise;
     return R;
 }
+
+// Yaw sensor model implementations (1-DOF heading correction)
+
+Eigen::VectorXd SensorYaw::innovation(const StateQuat& state) const {
+    const Eigen::Quaterniond q = state.quat.normalized();
+    const double predicted_yaw = std::atan2(
+        2.0 * (q.w() * q.z() + q.x() * q.y()),
+        1.0 - 2.0 * (q.y() * q.y() + q.z() * q.z()));
+
+    double inn = measurement - predicted_yaw;
+    // Wrap innovation to [-pi, pi] so a 359° vs 1° comparison gives +2° (not -358°).
+    while (inn >  M_PI) inn -= 2.0 * M_PI;
+    while (inn < -M_PI) inn += 2.0 * M_PI;
+
+    Eigen::VectorXd v(1);
+    v(0) = inn;
+    return v;
+}
+
+Eigen::MatrixXd SensorYaw::jacobian(const StateQuat& /*state*/) const {
+    // For roll = pitch ≈ 0 (typical for a level AUV) the yaw error equals
+    // δθ_z exactly, so the Jacobian is just a selector on the yaw error state.
+    Eigen::MatrixXd H = Eigen::MatrixXd::Zero(1, 15);
+    H(0, 8) = 1.0;  // δθ_z in error state ordering [pos, vel, δθ, bias_a, bias_g]
+    return H;
+}
+
+Eigen::MatrixXd SensorYaw::noise_covariance() const {
+    Eigen::MatrixXd R(1, 1);
+    R(0, 0) = measurement_noise;
+    return R;
+}
+
+void ESKF::yaw_update(const SensorYaw& yaw_meas) {
+    measurement_update(yaw_meas);
+    injection_and_reset();
+}

@@ -145,4 +145,16 @@ struct SensorMag {
     Eigen::MatrixXd noise_covariance() const;
 };
 
+// 1-DOF yaw measurement (ENU REP-103 convention, radians). Intended for
+// noisy-ground-truth injection during prototyping while the magnetometer
+// pathway is being worked out. Jacobian assumes near-level roll/pitch.
+struct SensorYaw {
+    double measurement;       // measured yaw (rad)
+    double measurement_noise; // variance (rad²)
+
+    Eigen::VectorXd innovation(const StateQuat& state) const;
+    Eigen::MatrixXd jacobian(const StateQuat& state) const;
+    Eigen::MatrixXd noise_covariance() const;
+};
+
 #endif  // ESKF__TYPEDEFS_HPP_

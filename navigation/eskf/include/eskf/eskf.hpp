@@ -23,6 +23,8 @@ class ESKF {
 
     void mag_update(const SensorMag& mag_meas);
 
+    void yaw_update(const SensorYaw& yaw_meas);
+
     inline StateQuat get_nominal_state() const { return current_nom_state_; }
 
     inline StateEuler get_error_state() const { return current_error_state_; }

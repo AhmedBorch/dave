@@ -40,7 +40,8 @@ ESKFNode::ESKFNode(const rclcpp::NodeOptions& options)
     this->declare_parameter<std::string>("topics.dvl_twist");
     this->declare_parameter<std::string>("topics.pressure_sensor");
     this->declare_parameter<std::string>("topics.odom");
-    // this->declare_parameter<std::string>("topics.magnetometer", "");
+    this->declare_parameter<std::string>("topics.magnetometer", "");
+    this->declare_parameter<std::string>("topics.ground_truth_odom", "");
     this->declare_parameter<std::string>("topics.pose");
     this->declare_parameter<std::string>("topics.twist");
 
@@ -72,13 +73,23 @@ void ESKFNode::set_subscribers_and_publisher() {
         dvl_topic, qos,
         std::bind(&ESKFNode::dvl_callback, this, std::placeholders::_1));
 
-    // std::string mag_topic = this->get_parameter("topics.magnetometer").as_string();
-    // if (!mag_topic.empty()) {
-    //     mag_sub_ = this->create_subscription<sensor_msgs::msg::MagneticField>(
-    //         mag_topic, qos,
-    //         std::bind(&ESKFNode::mag_callback, this, std::placeholders::_1));
-    //     RCLCPP_INFO(get_logger(), "Magnetometer enabled: '%s'", mag_topic.c_str());
-    // }
+    std::string mag_topic = this->get_parameter("topics.magnetometer").as_string();
+    if (!mag_topic.empty()) {
+        mag_sub_ = this->create_subscription<sensor_msgs::msg::MagneticField>(
+            mag_topic, qos,
+            std::bind(&ESKFNode::mag_callback, this, std::placeholders::_1));
+        RCLCPP_INFO(get_logger(), "Magnetometer enabled: '%s'", mag_topic.c_str());
+    }
+
+    std::string gt_yaw_topic = this->get_parameter("topics.ground_truth_odom").as_string();
+    if (!gt_yaw_topic.empty()) {
+        gt_yaw_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            gt_yaw_topic, qos,
+            std::bind(&ESKFNode::gt_yaw_callback, this, std::placeholders::_1));
+        RCLCPP_INFO(get_logger(),
+            "GT-yaw injection enabled (noisy heading from '%s')",
+            gt_yaw_topic.c_str());
+    }
 
     std::string pressure_topic = this->get_parameter("topics.pressure_sensor").as_string();
     depth_sub_ = this->create_subscription<sensor_msgs::msg::FluidPressure>(
@@ -207,21 +218,24 @@ void ESKFNode::set_parameters() {
 
     eskf_ = std::make_unique<ESKF>(eskf_params);
 
-    // Magnetometer disabled — comment block kept for re-enabling later
-    // std::vector<double> mag_ref =
-    //     this->declare_parameter<std::vector<double>>(
-    //         "mag_reference_field", std::vector<double>{0.0, 1.73e-5, -5.32e-5});
-    // mag_reference_field_ = Eigen::Map<Eigen::Vector3d>(mag_ref.data());
-    // double mag_noise_std =
-    //     this->declare_parameter<double>("mag_noise_std", 2e-4);
-    // mag_noise_ = Eigen::Matrix3d::Identity() * (mag_noise_std * mag_noise_std);
-    // RCLCPP_INFO(get_logger(),
-    //     "Mag reference field: [%.3e, %.3e, %.3e] T",
-    //     mag_reference_field_.x(), mag_reference_field_.y(), mag_reference_field_.z());
+    std::vector<double> mag_ref =
+        this->declare_parameter<std::vector<double>>(
+            "mag_reference_field", std::vector<double>{0.0, 1.73e-5, -5.32e-5});
+    mag_reference_field_ = Eigen::Map<Eigen::Vector3d>(mag_ref.data());
+    double mag_noise_std =
+        this->declare_parameter<double>("mag_noise_std", 2e-4);
+    mag_noise_ = Eigen::Matrix3d::Identity() * (mag_noise_std * mag_noise_std);
+    RCLCPP_INFO(get_logger(),
+        "Mag reference field: [%.3e, %.3e, %.3e] T",
+        mag_reference_field_.x(), mag_reference_field_.y(), mag_reference_field_.z());
 
     add_gravity_to_imu_ = this->declare_parameter<bool>("add_gravity_to_imu");
     RCLCPP_INFO(get_logger(), "add_gravity_to_imu: %s",
                 add_gravity_to_imu_ ? "true" : "false");
+
+    yaw_gt_noise_std_ =
+        this->declare_parameter<double>("yaw_gt_noise_std", 0.05);
+    yaw_noise_dist_ = std::normal_distribution<double>(0.0, yaw_gt_noise_std_);
 }
 
 void ESKFNode::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {
@@ -326,23 +340,39 @@ void ESKFNode::dvl_callback(
 #endif
 }
 
-// void ESKFNode::mag_callback(
-//     const sensor_msgs::msg::MagneticField::SharedPtr msg) {
-//     if (!first_imu_msg_received_) return;
-//     // gz-sim bridge outputs in Gauss with body-NED axes (x=North, y=East, z=Down).
-//     // Convert to body-FLU Tesla (x=East, y=North, z=Up) that the ESKF expects.
-//     constexpr double GAUSS_TO_TESLA = 1e-4;
-//     const double g_N = msg->magnetic_field.x;
-//     const double g_E = msg->magnetic_field.y;
-//     const double g_D = msg->magnetic_field.z;
-//     SensorMag mag_sensor;
-//     mag_sensor.measurement << g_E * GAUSS_TO_TESLA,
-//                                g_N * GAUSS_TO_TESLA,
-//                               -g_D * GAUSS_TO_TESLA;
-//     mag_sensor.reference_field   = mag_reference_field_;
-//     mag_sensor.measurement_noise = mag_noise_;
-//     eskf_->mag_update(mag_sensor);
-// }
+void ESKFNode::mag_callback(
+    const sensor_msgs::msg::MagneticField::SharedPtr msg) {
+    if (!first_imu_msg_received_) return;
+    // gz-sim bridge outputs in Gauss with body-NED axes (x=North, y=East, z=Down).
+    // Convert to body-FLU Tesla (x=East, y=North, z=Up) that the ESKF expects.
+    constexpr double GAUSS_TO_TESLA = 1e-4;
+    const double g_N = msg->magnetic_field.x;
+    const double g_E = msg->magnetic_field.y;
+    const double g_D = msg->magnetic_field.z;
+    SensorMag mag_sensor;
+    mag_sensor.measurement << g_E * GAUSS_TO_TESLA,
+                               g_N * GAUSS_TO_TESLA,
+                              -g_D * GAUSS_TO_TESLA;
+    mag_sensor.reference_field   = mag_reference_field_;
+    mag_sensor.measurement_noise = mag_noise_;
+    eskf_->mag_update(mag_sensor);
+}
+
+void ESKFNode::gt_yaw_callback(
+    const nav_msgs::msg::Odometry::SharedPtr msg) {
+    if (!first_imu_msg_received_) return;
+
+    // Extract yaw (ENU REP-103) from the GT quaternion.
+    const auto& q = msg->pose.pose.orientation;
+    const double truth_yaw = std::atan2(
+        2.0 * (q.w * q.z + q.x * q.y),
+        1.0 - 2.0 * (q.y * q.y + q.z * q.z));
+
+    SensorYaw yaw_sensor;
+    yaw_sensor.measurement = truth_yaw + yaw_noise_dist_(rng_);
+    yaw_sensor.measurement_noise = yaw_gt_noise_std_ * yaw_gt_noise_std_;
+    eskf_->yaw_update(yaw_sensor);
+}
 
 void ESKFNode::depth_callback(
     const sensor_msgs::msg::FluidPressure::SharedPtr msg) {
