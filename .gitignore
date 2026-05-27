@@ -42,3 +42,7 @@
 # Mac
 .DS_Store
 navigation/map_matching/maps/rig.dae
+
+
+# 
+**/__pycache__/**

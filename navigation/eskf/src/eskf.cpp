@@ -289,3 +289,41 @@ void ESKF::yaw_update(const SensorYaw& yaw_meas) {
     measurement_update(yaw_meas);
     injection_and_reset();
 }
+
+// Pose sensor model implementations (6-DOF absolute pose)
+
+Eigen::VectorXd SensorPose::innovation(const StateQuat& state) const {
+    Eigen::VectorXd v(6);
+
+    // Position innovation: measured - predicted
+    v.head<3>() = position - state.pos;
+
+    // Orientation innovation using right-multiplicative convention:
+    //   q_true = q_nom ⊗ δq  →  δq = q_nom⁻¹ ⊗ q_meas
+    const Eigen::Quaterniond q_nom = state.quat.normalized();
+    Eigen::Quaterniond q_err = q_nom.conjugate() * orientation.normalized();
+    // Ensure shortest path (positive scalar part)
+    if (q_err.w() < 0.0) {
+        q_err = Eigen::Quaterniond(-q_err.coeffs());
+    }
+    v.tail<3>() = 2.0 * q_err.vec();
+
+    return v;
+}
+
+Eigen::MatrixXd SensorPose::jacobian(const StateQuat& /*state*/) const {
+    // Error state ordering: [δpos(0:3), δvel(3:6), δθ(6:9), δbias_a(9:12), δbias_g(12:15)]
+    Eigen::MatrixXd H = Eigen::MatrixXd::Zero(6, 15);
+    H.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();  // position
+    H.block<3, 3>(3, 6) = Eigen::Matrix3d::Identity();  // attitude
+    return H;
+}
+
+Eigen::MatrixXd SensorPose::noise_covariance() const {
+    return covariance;
+}
+
+void ESKF::pose_update(const SensorPose& pose_meas) {
+    measurement_update(pose_meas);
+    injection_and_reset();
+}

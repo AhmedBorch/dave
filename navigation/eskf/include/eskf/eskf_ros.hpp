@@ -47,6 +47,10 @@ class ESKFNode : public rclcpp::Node {
     // @brief Inject a noisy ground-truth yaw as a 1-DOF heading correction.
     void gt_yaw_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
+    // @brief Update ESKF with a 6-DOF pose from the map-matcher.
+    void map_pose_callback(
+        const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+
     // @brief Publish the odometry message
     void publish_odom();
 
@@ -79,6 +83,9 @@ class ESKFNode : public rclcpp::Node {
     rclcpp::Subscription<sensor_msgs::msg::MagneticField>::SharedPtr mag_sub_;
 
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr gt_yaw_sub_;
+
+    rclcpp::Subscription<
+        geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr map_pose_sub_;
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 
@@ -163,8 +170,8 @@ class ESKFNode : public rclcpp::Node {
     Eigen::Isometry3d Tf_base_depth_ = Eigen::Isometry3d::Identity();
 
     double gravity;
-    double water_density;
-    double atmospheric_pressure;
+    double depth_standard_pressure_kPa_;  // must match <standard_pressure> in sensor SDF
+    double depth_kPa_per_meter_;          // must match <kPa_per_meter> in sensor SDF
 };
 
 #endif  // ESKF__ESKF_ROS_HPP_

@@ -13,6 +13,12 @@ def generate_launch_description():
         description='Robot namespace — used as frame_prefix',
     )
 
+    map_pose_topic_arg = DeclareLaunchArgument(
+        'map_pose_topic',
+        default_value='',
+        description='Topic for map-matcher pose updates (empty = disabled)',
+    )
+
     eskf_params = os.path.join(
         get_package_share_directory('eskf'), 'config', 'eskf_params.yaml'
     )
@@ -24,55 +30,9 @@ def generate_launch_description():
         parameters=[
             eskf_params,
             {'frame_prefix': LaunchConfiguration('namespace')},
+            {'topics.map_pose': LaunchConfiguration('map_pose_topic')},
         ],
         output='screen',
     )
 
-    return LaunchDescription([namespace_arg, eskf_node])
-    return LaunchDescription([
-        
-        # ---------------------------------------------------------
-        # INSTANCE 1: The Local Filter (Smooth, Odom -> Base_Link)
-        # ---------------------------------------------------------
-        Node(
-            package='eskf',
-            executable='eskf_node',
-            name='eskf_local', # Give it a unique name
-            parameters=[
-                {'publish_tf': True},
-                {'map_frame': 'map'},
-                {'odom_frame': 'odom'},
-                {'base_link_frame': 'base_link'},
-                {'world_frame': 'odom'} # Tells this filter its top-level frame is odom
-            ],
-            remappings=[
-                # (Inside node name, Outside ROS2 topic name)
-                ('imu', '/sensors/imu/data'),
-                ('dvl', '/sensors/dvl/data'),
-                ('pose', '/dummy_topic'), # Ignore pose for the local filter
-                ('odometry/filtered', '/odometry/local') # Output topic
-            ]
-        ),
-
-        # ---------------------------------------------------------
-        # INSTANCE 2: The Global Filter (Jumps, Map -> Odom)
-        # ---------------------------------------------------------
-        Node(
-            package='eskf',
-            executable='eskf_node',
-            name='eskf_global', # Unique name for the second instance
-            parameters=[
-                {'publish_tf': True},
-                {'map_frame': 'map'},
-                {'odom_frame': 'odom'},
-                {'base_link_frame': 'base_link'},
-                {'world_frame': 'map'} # Tells this filter its top-level frame is map
-            ],
-            remappings=[
-                ('imu', '/sensors/imu/data'),
-                ('dvl', '/sensors/dvl/data'),
-                ('pose', '/map_matcher/pose'), # THIS filter listens to the 3D Sonar!
-                ('odometry/filtered', '/odometry/global') # Output topic
-            ]
-        )
-    ])
+    return LaunchDescription([namespace_arg, map_pose_topic_arg, eskf_node])

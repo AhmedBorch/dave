@@ -42,6 +42,7 @@ ESKFNode::ESKFNode(const rclcpp::NodeOptions& options)
     this->declare_parameter<std::string>("topics.odom");
     this->declare_parameter<std::string>("topics.magnetometer", "");
     this->declare_parameter<std::string>("topics.ground_truth_odom", "");
+    this->declare_parameter<std::string>("topics.map_pose", "");
     this->declare_parameter<std::string>("topics.pose");
     this->declare_parameter<std::string>("topics.twist");
 
@@ -89,6 +90,18 @@ void ESKFNode::set_subscribers_and_publisher() {
         RCLCPP_INFO(get_logger(),
             "GT-yaw injection enabled (noisy heading from '%s')",
             gt_yaw_topic.c_str());
+    }
+
+    std::string map_pose_topic = this->get_parameter("topics.map_pose").as_string();
+    if (!map_pose_topic.empty()) {
+        // Map-matcher publishes RELIABLE; use a reliable subscriber to match.
+        auto reliable_qos = rclcpp::QoS(10);
+        map_pose_sub_ = this->create_subscription<
+            geometry_msgs::msg::PoseWithCovarianceStamped>(
+            map_pose_topic, reliable_qos,
+            std::bind(&ESKFNode::map_pose_callback, this, std::placeholders::_1));
+        RCLCPP_INFO(get_logger(),
+            "Map-pose update enabled: '%s'", map_pose_topic.c_str());
     }
 
     std::string pressure_topic = this->get_parameter("topics.pressure_sensor").as_string();
@@ -374,12 +387,36 @@ void ESKFNode::gt_yaw_callback(
     eskf_->yaw_update(yaw_sensor);
 }
 
+void ESKFNode::map_pose_callback(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+    if (!first_imu_msg_received_) return;
+
+    SensorPose pose_sensor;
+
+    const auto& p = msg->pose.pose.position;
+    pose_sensor.position = Eigen::Vector3d(p.x, p.y, p.z);
+
+    const auto& q = msg->pose.pose.orientation;
+    pose_sensor.orientation = Eigen::Quaterniond(q.w, q.x, q.y, q.z).normalized();
+
+    // PoseWithCovariance stores covariance row-major [x,y,z,rot_x,rot_y,rot_z]^2
+    pose_sensor.covariance =
+        Eigen::Map<const Eigen::Matrix<double, 6, 6, Eigen::RowMajor>>(
+            msg->pose.covariance.data());
+
+    eskf_->pose_update(pose_sensor);
+}
+
 void ESKFNode::depth_callback(
     const sensor_msgs::msg::FluidPressure::SharedPtr msg) {
     SensorDepth depth_sensor;
+    // Plugin publishes absolute pressure in kPa: P = P_atm + |z| * kPa_per_meter.
+    // Invert to z in ENU (negative underwater).
     depth_sensor.measurement =
-        -msg->fluid_pressure / (this->water_density * this->gravity);
-    depth_sensor.measurement_noise = msg->variance;
+        -(msg->fluid_pressure - depth_standard_pressure_kPa_) / depth_kPa_per_meter_;
+    // msg->variance is in kPa²; convert to m²
+    depth_sensor.measurement_noise =
+        msg->variance / (depth_kPa_per_meter_ * depth_kPa_per_meter_);
     eskf_->depth_update(depth_sensor);
 
 #ifndef NDEBUG
@@ -522,11 +559,13 @@ void ESKFNode::lookup_static_transforms() {
 
 void ESKFNode::complete_initialization() {
     set_subscribers_and_publisher();
-    this->gravity = -this->declare_parameter<double>("gravity", 9.81);
-    this->water_density =
-        this->declare_parameter<double>("water_density", 1000.0);
-    this->atmospheric_pressure =
-        this->declare_parameter<double>("atmospheric_pressure", 100000.0);
+    this->gravity = -this->declare_parameter<double>("gravity", 9.8);
+    // Depth conversion uses the same constants as the sea_pressure_sensor SDF plugin.
+    // Plugin publishes total pressure in kPa: P = standard_pressure + |z| * kPa_per_meter.
+    this->depth_standard_pressure_kPa_ =
+        this->declare_parameter<double>("depth_standard_pressure_kPa", 101.325);
+    this->depth_kPa_per_meter_ =
+        this->declare_parameter<double>("depth_kPa_per_meter", 9.80638);
     set_parameters();
 
     time_step_ = std::chrono::milliseconds(

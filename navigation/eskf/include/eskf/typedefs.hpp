@@ -157,4 +157,18 @@ struct SensorYaw {
     Eigen::MatrixXd noise_covariance() const;
 };
 
+// 6-DOF absolute pose measurement (e.g. from a map-matcher or GPS/USBL).
+// Innovation: [pos_error(3), orientation_error_angle(3)].
+// Uses right-multiplicative error convention matching the ESKF:
+//   δq = q_nom⁻¹ ⊗ q_meas,  δθ ≈ 2·δq.vec()
+struct SensorPose {
+    Eigen::Vector3d position;       // measured position in world frame
+    Eigen::Quaterniond orientation; // measured orientation (world → body)
+    Eigen::Matrix6d covariance;     // 6×6 noise covariance [pos(3), rot(3)]
+
+    Eigen::VectorXd innovation(const StateQuat& state) const;
+    Eigen::MatrixXd jacobian(const StateQuat& state) const;
+    Eigen::MatrixXd noise_covariance() const;
+};
+
 #endif  // ESKF__TYPEDEFS_HPP_

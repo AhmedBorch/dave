@@ -25,6 +25,8 @@ class ESKF {
 
     void yaw_update(const SensorYaw& yaw_meas);
 
+    void pose_update(const SensorPose& pose_meas);
+
     inline StateQuat get_nominal_state() const { return current_nom_state_; }
 
     inline StateEuler get_error_state() const { return current_error_state_; }

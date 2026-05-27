@@ -57,6 +57,9 @@
         magnetometer: ""
         ground_truth_odom: /model/bluerov2/odometry
         pressure_sensor: /model/bluerov2/sea_pressure
+        # Set to the map-matcher voted pose topic to enable absolute pose updates.
+        # Leave empty to run without map-matcher corrections.
+        map_pose: ""
         odom: /model/bluerov2/eskf/odom
         pose: /model/bluerov2/eskf/pose
         twist: /model/bluerov2/eskf/twist
@@ -87,6 +90,13 @@
       initial_gyro_bias:  [0.0, 0.0, 0.0]
       initial_accel_bias: [0.0, 0.0, 0.0]
 
-      gravity: 9.82841
-      water_density: 1026.0
-      atmospheric_pressure: 101000.0
+      # Gazebo default gravity (world file has no <gravity> tag).
+      gravity: 9.8
+
+      # Depth conversion — must match the sea_pressure_sensor SDF values exactly:
+      #   <standard_pressure>101.325</standard_pressure>   (kPa, atmospheric ref)
+      #   <kPa_per_meter>9.80638</kPa_per_meter>           (kPa gained per metre of depth)
+      # The plugin publishes total pressure in kPa: P = standard + |z| * kPa_per_meter
+      # z_ENU = -(P - standard_pressure) / kPa_per_meter
+      depth_standard_pressure_kPa: 101.325
+      depth_kPa_per_meter: 9.80638
