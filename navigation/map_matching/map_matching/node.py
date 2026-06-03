@@ -24,7 +24,7 @@ from .conversions import (
 from .pipeline import PipelineParams, run
 from .ransac import RansacParams
 from .registration import GicpParams
-from .uncertainty import UncertaintyParams
+from .uncertainty import BrossardParams, UncertaintyParams
 
 
 class MapMatchingNode(Node):
@@ -145,6 +145,12 @@ class MapMatchingNode(Node):
         self.declare_parameter('consistency_max_rotation_deg', 10.0)
         self.declare_parameter('consistency_covariance_scale', 1000.0)
 
+        # Covariance method
+        self.declare_parameter('use_brossard_cov', False)
+        self.declare_parameter('brossard.std_sensor', 0.01)
+        self.declare_parameter('brossard.use_bonnabel', False)
+        self.declare_parameter('brossard.voxel_size', 0.05)
+
     def _load_full_map(self) -> None:
         path = self.get_parameter('full_map_path').get_parameter_value().string_value
         if not path or not os.path.isfile(path):
@@ -170,8 +176,14 @@ class MapMatchingNode(Node):
                 base_translation_var=gp('uncertainty.base_translation_var').get_parameter_value().double_value,
                 base_rotation_var=gp('uncertainty.base_rotation_var').get_parameter_value().double_value,
             ),
+            brossard=BrossardParams(
+                std_sensor=gp('brossard.std_sensor').get_parameter_value().double_value,
+                use_bonnabel=gp('brossard.use_bonnabel').get_parameter_value().bool_value,
+                voxel_size=gp('brossard.voxel_size').get_parameter_value().double_value,
+            ),
             roll_pitch_limit_deg=gp('roll_pitch_limit_deg').get_parameter_value().double_value,
             max_ransac_retries=gp('max_ransac_retries').get_parameter_value().integer_value,
+            use_brossard_cov=gp('use_brossard_cov').get_parameter_value().bool_value,
         )
 
     def _build_structure_pose(self) -> np.ndarray:

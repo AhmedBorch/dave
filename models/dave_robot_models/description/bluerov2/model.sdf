@@ -281,7 +281,7 @@
               <when>best</when>
               <noise type="gaussian">
                 <!-- <stddev>0.005</stddev> -->
-                <stddev>0.01</stddev>
+                <stddev>0.05</stddev>
               </noise>
               <visualize>true</visualize>
             </bottom_mode>

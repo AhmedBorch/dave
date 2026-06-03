@@ -13,9 +13,9 @@
       # yaw_bias correction — left at 1e-4 it absorbs every unexplained DVL innovation
       # into bias_z and over-rotates the ESKF. Small Q effectively pins bias near zero.
       diag_Q_std: [0.003, 0.003, 0.003,    # accel x/y/z  (6.3e-4 × 5 ≈ 0.003)
-                  0.001, 0.001, 0.001,    # gyro  x/y/z  (1.6e-4 × 5 ≈ 0.001)
+                  0.005, 0.005, 0.005,    # gyro  x/y/z  (1.6e-4 × 5 ≈ 0.001)
                   0.001, 0.001, 0.001,    # accel bias random walk
-                  1.0e-6, 1.0e-6, 1.0e-6] # gyro bias random walk (heavily damped)
+                  1.0e-5, 1.0e-5, 1.0e-5] # gyro bias random walk (heavily damped)
       # ── Initial error-state covariance (15 values on diagonal) ───────────
       # [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z,
       #  roll, pitch, yaw,
@@ -66,7 +66,7 @@
 
       # σ of additive Gaussian noise applied to GT yaw before injection (radians).
       # Tune to taste; smaller = tighter heading lock.
-      yaw_gt_noise_std: 0.05
+      yaw_gt_noise_std: 0.3
 
       # Earth's B-field in world frame (ENU: x=East y=North z=Up), Tesla.
       # World origin: North Sea 56.7°N 3.5°E — Gazebo computes this via WMM.

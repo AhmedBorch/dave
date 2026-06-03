@@ -1,0 +1,33 @@
+# PointMatcher config for Brossard covariance estimation only.
+# maxIterationCount: 1 — one step from the provided T_init (the GICP result),
+# then the PointToPlaneWithCov error minimiser computes Censi/Bonnabel covariance
+# at that linearisation point.  No random subsampling so the result is deterministic.
+
+readingDataPointsFilters:
+  - SurfaceNormalDataPointsFilter:
+      knn: 10
+
+referenceDataPointsFilters:
+  - SurfaceNormalDataPointsFilter:
+      knn: 10
+
+matcher:
+  KDTreeMatcher:
+    knn: 3
+
+outlierFilters:
+  - TrimmedDistOutlierFilter:
+      ratio: 0.9
+
+errorMinimizer:
+  PointToPlaneWithCovErrorMinimizer
+
+transformationCheckers:
+  - CounterTransformationChecker:
+      maxIterationCount: 1
+
+inspector:
+  NullInspector
+
+logger:
+  NullLogger

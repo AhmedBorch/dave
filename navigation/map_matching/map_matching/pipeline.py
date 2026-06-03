@@ -27,7 +27,7 @@ import open3d as o3d
 
 from .ransac import RansacParams, align
 from .registration import GicpParams, GicpResult, refine
-from .uncertainty import UncertaintyParams, estimate
+from .uncertainty import BrossardParams, UncertaintyParams, estimate, estimate_brossard
 
 
 @dataclass
@@ -35,6 +35,7 @@ class PipelineParams:
     ransac: RansacParams = field(default_factory=RansacParams)
     gicp: GicpParams = field(default_factory=GicpParams)
     uncertainty: UncertaintyParams = field(default_factory=UncertaintyParams)
+    brossard: BrossardParams = field(default_factory=BrossardParams)
 
     # Fault check: reject results whose recovered roll or pitch exceeds this.
     roll_pitch_limit_deg: float = 10.0
@@ -42,6 +43,10 @@ class PipelineParams:
     # How many additional RANSAC attempts to make when a result is rejected.
     # Total attempts = 1 + max_ransac_retries.
     max_ransac_retries: int = 3
+
+    # Set True to use Brossard's analytic ICP covariance instead of the
+    # simple RMSE-scaled diagonal.
+    use_brossard_cov: bool = False
 
 
 @dataclass
@@ -88,7 +93,16 @@ def run(submap: o3d.geometry.PointCloud,
         T_coarse    = align(submap, full_map, params.ransac)
         gicp_result = refine(submap, full_map, T_coarse, params.gicp)
         pose_world  = T_world_struct @ gicp_result.transformation
-        cov         = estimate(gicp_result, params.uncertainty)
+
+        if params.use_brossard_cov:
+            try:
+                cov = estimate_brossard(gicp_result, submap, full_map, params.brossard)
+            except Exception as exc:
+                import warnings
+                warnings.warn(f'Brossard covariance failed, falling back to simple estimate: {exc}')
+                cov = estimate(gicp_result, params.uncertainty)
+        else:
+            cov = estimate(gicp_result, params.uncertainty)
 
         roll, pitch, yaw = _euler_deg(pose_world)
         is_valid         = abs(roll) <= limit and abs(pitch) <= limit

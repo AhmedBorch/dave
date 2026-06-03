@@ -35,7 +35,24 @@ map_matching:
       max_iterations: 50
       voxel_size: 0.05
 
-    # Uncertainty estimator
+    # ── Covariance method ────────────────────────────────────────────────────
+    # false → simple diagonal covariance scaled by GICP fitness/RMSE (fast)
+    # true  → Brossard analytic Censi/Bonnabel covariance via icp_with_cov
+    #         (requires the 3d-icp-cov library to be compiled)
+    use_brossard_cov: true
+
+    # Brossard parameters (only used when use_brossard_cov: true)
+    brossard:
+      # Sensor range noise std dev [m] — matches lidar noise.stddev in model.sdf
+      std_sensor: 0.01
+      # false = Censi (sensor noise only)
+      # true  = Bonnabel (sensor noise + calibration bias terms)
+      use_bonnabel: false
+      # Voxel size for downsampling before the Brossard ICP call [m].
+      # Should match gicp.voxel_size for consistent point density.
+      voxel_size: 0.05
+
+    # Simple uncertainty estimator (used when use_brossard_cov: false)
     uncertainty:
       base_translation_var: 0.01
       base_rotation_var: 0.001
