@@ -134,7 +134,7 @@ class ESKFNode : public rclcpp::Node {
     // GT yaw noise injection (placeholder until the real magnetometer pathway
     // is sorted). Subscribes to a Gazebo odometry topic and feeds yaw + N(0,σ²)
     // into the ESKF as a 1-DOF heading measurement.
-    double yaw_gt_noise_std_{0.05};  // σ in radians (~3°)
+    double yaw_gt_noise_std_{0.4};  // σ in radians (~3°) for 0.05
     std::mt19937 rng_{std::random_device{}()};
     std::normal_distribution<double> yaw_noise_dist_{0.0, 1.0};
     Eigen::Matrix3d mag_noise_{};            // measurement noise covariance (T²)

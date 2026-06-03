@@ -124,7 +124,7 @@
     <!-- Map-matching reference structure (rig.dae) -->
     <model name="rig">
       <static>true</static>
-      <pose>8 0 -2.5 0 0 2.0</pose>
+      <pose>16.0 0 -12.0 0 0 2.0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>

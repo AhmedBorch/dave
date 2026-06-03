@@ -8,7 +8,7 @@ from typing import Optional
 import numpy as np
 import open3d as o3d
 import rclpy
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, Vector3Stamped
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import PointCloud2
@@ -57,9 +57,19 @@ class MapMatchingNode(Node):
             self.get_parameter('output_pose_topic').get_parameter_value().string_value,
             10,
         )
+        self._euler_pub = self.create_publisher(
+            Vector3Stamped,
+            self.get_parameter('output_euler_topic').get_parameter_value().string_value,
+            10,
+        )
         self._voted_pub = self.create_publisher(
             PoseWithCovarianceStamped,
             self.get_parameter('average_pose_topic').get_parameter_value().string_value,
+            10,
+        )
+        self._voted_euler_pub = self.create_publisher(
+            Vector3Stamped,
+            self.get_parameter('average_euler_topic').get_parameter_value().string_value,
             10,
         )
         self._voted_cloud_pub = self.create_publisher(
@@ -83,7 +93,9 @@ class MapMatchingNode(Node):
         self.declare_parameter('full_map_path', '')
         self.declare_parameter('input_cloud_topic', '/cloud_in')
         self.declare_parameter('output_pose_topic', '~/vehicle_pose')
+        self.declare_parameter('output_euler_topic', '~/vehicle_euler')
         self.declare_parameter('average_pose_topic', '~/average_pose')
+        self.declare_parameter('average_euler_topic', '~/average_euler')
         self.declare_parameter('average_cloud_topic', '~/average_cloud')
         self.declare_parameter('world_frame', 'map')
 
@@ -237,6 +249,14 @@ class MapMatchingNode(Node):
         out.pose = pose_with_covariance(pose_baselink, result.covariance)
         self._pub.publish(out)
 
+        R_raw = pose_baselink[:3, :3]
+        raw_euler = Vector3Stamped()
+        raw_euler.header = out.header
+        raw_euler.vector.x = math.atan2(float(R_raw[2, 1]), float(R_raw[2, 2]))
+        raw_euler.vector.y = math.asin(float(np.clip(-R_raw[2, 0], -1.0, 1.0)))
+        raw_euler.vector.z = math.atan2(float(R_raw[1, 0]), float(R_raw[0, 0]))
+        self._euler_pub.publish(raw_euler)
+
         # Voted (modal-cluster) pose on the secondary topic.
         voted_pose = self._vote_pose(pose_baselink)
         voted_out = PoseWithCovarianceStamped()
@@ -250,9 +270,16 @@ class MapMatchingNode(Node):
         self._voted_cloud_pub.publish(cloud_out)
 
         R = voted_pose[:3, :3]
-        voted_pitch = math.degrees(math.asin(float(np.clip(-R[2, 0], -1.0, 1.0))))
-        voted_roll  = math.degrees(math.atan2(float(R[2, 1]), float(R[2, 2])))
-        voted_yaw   = math.degrees(math.atan2(float(R[1, 0]), float(R[0, 0])))
+        voted_roll  = math.atan2(float(R[2, 1]), float(R[2, 2]))
+        voted_pitch = math.asin(float(np.clip(-R[2, 0], -1.0, 1.0)))
+        voted_yaw   = math.atan2(float(R[1, 0]), float(R[0, 0]))
+
+        voted_euler = Vector3Stamped()
+        voted_euler.header = voted_out.header
+        voted_euler.vector.x = voted_roll
+        voted_euler.vector.y = voted_pitch
+        voted_euler.vector.z = voted_yaw
+        self._voted_euler_pub.publish(voted_euler)
 
         buf_n = len(self._pose_buffer)
         self.get_logger().info(

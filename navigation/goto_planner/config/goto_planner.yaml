@@ -4,9 +4,9 @@ goto_planner:
     # odom_topic: /model/bluerov2/eskf/odom
     odom_topic: /model/bluerov2/odometry
 
-    goal_x: 3.0
-    goal_y: 1.0
-    goal_z: -1.0
+    goal_x: 4.0
+    goal_y: 0.0
+    goal_z: -9.0
     # goal_yaw: 0.0              # rad ENU (0=East, 1.5708=North). Omit to skip ORIENT stage.
 
     # Tolerances
