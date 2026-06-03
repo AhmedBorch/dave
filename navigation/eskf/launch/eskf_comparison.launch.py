@@ -1,11 +1,16 @@
 """Launch two ESKF instances simultaneously for comparison.
 
-Instance 1 — eskf_base: IMU + DVL + depth + GT-yaw only.
-             Publishes on /model/bluerov2/eskf/odom|pose|twist (TF enabled).
+Both nodes keep the executable name 'eskf_node' so that the YAML parameter
+file (keyed on '/**/eskf_node/ros__parameters') matches both.
+They are separated by ROS 2 namespace:
 
-Instance 2 — eskf_map:  same sensors + map-matcher voted pose.
-             Publishes on /model/bluerov2/eskf_map/odom|pose|twist (TF disabled
-             to avoid conflicts with instance 1).
+  /eskf_base/eskf_node  — IMU + DVL + depth + heading only
+  /eskf_map/eskf_node   — same sensors + map-matcher voted pose
+
+Output topics are overridden so they land at well-known absolute paths:
+
+  /model/bluerov2/eskf/odom      (base, no map)
+  /model/bluerov2/eskf_map/odom  (with map)
 
 Usage:
   ros2 launch eskf eskf_comparison.launch.py \\
@@ -40,7 +45,8 @@ def generate_launch_description():
     eskf_base = Node(
         package='eskf',
         executable='eskf_node',
-        name='eskf_base',
+        name='eskf_node',
+        namespace='eskf_base',   # FQN: /eskf_base/eskf_node  → YAML matches
         parameters=[
             eskf_params,
             {
@@ -59,7 +65,8 @@ def generate_launch_description():
     eskf_map = Node(
         package='eskf',
         executable='eskf_node',
-        name='eskf_map',
+        name='eskf_node',
+        namespace='eskf_map',    # FQN: /eskf_map/eskf_node   → YAML matches
         parameters=[
             eskf_params,
             {

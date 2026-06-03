@@ -85,7 +85,33 @@ ros2 launch eskf eskf.launch.py map_pose_topic:=/map_matching/average_pose
 ros2 launch eskf eskf_comparison.launch.py
 ```
 
-Publishes the base ESKF on `/model/bluerov2/eskf/odom` and the map-aided ESKF on `/model/bluerov2/eskf_map/odom`.
+| Instance | Output topic | Map-matcher |
+|---|---|---|
+| `eskf_base` | `/model/bluerov2/eskf/odom` | No |
+| `eskf_map` | `/model/bluerov2/eskf_map/odom` | Yes |
+
+**Live RMSE evaluation** (run while both instances are active):
+
+```bash
+python3 navigation/rmse_eval.py
+```
+
+Prints a comparison table every 5 seconds and on Ctrl-C:
+
+```
+==============================================================
+  RMSE comparison  (n = 312 matched samples)
+==============================================================
+  Metric                    ESKF base          ESKF+map
+  ----------------------------------------------------------
+  x  (m)                       0.2341            0.0821  (+64.9%)
+  y  (m)                       0.1823            0.0634  (+65.2%)
+  z  (m)                       0.0412            0.0387  (+6.1%)
+  xy (m)                       0.2964            0.1046  (+64.7%)
+  3D pos (m)                   0.2992            0.1107  (+63.0%)
+  yaw (rad)                    0.0523            0.0201  (+61.6%)
+==============================================================
+```
 
 ### 3. Map Matcher
 
