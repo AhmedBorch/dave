@@ -52,6 +52,16 @@ class MapMatchingNode(Node):
         # Each entry: (translation np.ndarray[3], quaternion np.ndarray[4 xyzw])
         self._pose_buffer: deque = deque(maxlen=buf_size)
 
+        # Quality-gate state
+        self._min_points = self.get_parameter('min_points').get_parameter_value().integer_value
+        self._warmup_count = self.get_parameter('warmup_measurements').get_parameter_value().integer_value
+        self._consistency_max_t = self.get_parameter('consistency_max_translation_m').get_parameter_value().double_value
+        self._consistency_max_r_deg = self.get_parameter('consistency_max_rotation_deg').get_parameter_value().double_value
+        self._consistency_cov_scale = self.get_parameter('consistency_covariance_scale').get_parameter_value().double_value
+        self._valid_count: int = 0
+        self._last_pose: Optional[np.ndarray] = None
+        self._last_voted_pose: Optional[np.ndarray] = None
+
         self._pub = self.create_publisher(
             PoseWithCovarianceStamped,
             self.get_parameter('output_pose_topic').get_parameter_value().string_value,
@@ -128,6 +138,13 @@ class MapMatchingNode(Node):
         self.declare_parameter('vote_buffer_size', 30)
         self.declare_parameter('vote_cluster_radius', 0.3)
 
+        # Quality gates
+        self.declare_parameter('min_points', 1000)
+        self.declare_parameter('warmup_measurements', 20)
+        self.declare_parameter('consistency_max_translation_m', 1.0)
+        self.declare_parameter('consistency_max_rotation_deg', 10.0)
+        self.declare_parameter('consistency_covariance_scale', 1000.0)
+
     def _load_full_map(self) -> None:
         path = self.get_parameter('full_map_path').get_parameter_value().string_value
         if not path or not os.path.isfile(path):
@@ -179,26 +196,19 @@ class MapMatchingNode(Node):
         finally:
             self._busy.release()
 
-    def _vote_pose(self, pose_world: np.ndarray) -> np.ndarray:
-        """Add pose to buffer, find the densest cluster, return its centroid.
+    def _compute_vote(self, seed_pose: np.ndarray) -> np.ndarray:
+        """Return the modal-cluster centroid of the current buffer.
 
-        Each pose in the buffer casts a vote for every other pose within
-        vote_cluster_radius. The pose with the most votes (densest neighbourhood)
-        is the mode; we return the mean of all poses in that cluster.
+        Does NOT modify the buffer. Falls back to seed_pose when the buffer
+        has fewer than 2 entries.
         """
-        t = pose_world[:3, 3].copy()
-        q = matrix_to_quaternion(pose_world[:3, :3])
-        self._pose_buffer.append((t, q))
-
         n = len(self._pose_buffer)
-        if n == 1:
-            return pose_world
+        if n < 2:
+            return seed_pose
 
         translations = np.array([p[0] for p in self._pose_buffer])  # (n, 3)
         quaternions  = np.array([p[1] for p in self._pose_buffer])  # (n, 4)
 
-        # Count neighbours within cluster_radius for each pose.
-        # Using broadcasting: diffs[i,j] = ||t_i - t_j||
         diffs  = translations[:, None, :] - translations[None, :, :]  # (n, n, 3)
         dists  = np.linalg.norm(diffs, axis=-1)                        # (n, n)
         counts = (dists <= self._vote_cluster_radius).sum(axis=1)      # (n,)
@@ -207,10 +217,8 @@ class MapMatchingNode(Node):
         mask = dists[best_idx] <= self._vote_cluster_radius
         cluster_size = int(mask.sum())
 
-        # Mean translation of the winning cluster.
         voted_t = translations[mask].mean(axis=0)
 
-        # Mean quaternion with hemisphere alignment relative to the cluster seed.
         ref_q = quaternions[best_idx]
         cluster_qs = quaternions[mask].copy()
         for i in range(cluster_size):
@@ -224,10 +232,18 @@ class MapMatchingNode(Node):
         voted_pose[:3, 3]  = voted_t
         return voted_pose
 
+    def _add_and_vote(self, pose_world: np.ndarray) -> np.ndarray:
+        """Add pose to buffer, then return the modal-cluster centroid."""
+        t = pose_world[:3, 3].copy()
+        q = matrix_to_quaternion(pose_world[:3, :3])
+        self._pose_buffer.append((t, q))
+        return self._compute_vote(pose_world)
+
     def _process(self, msg: PointCloud2) -> None:
         submap = pointcloud2_to_open3d(msg)
-        if len(submap.points) < 10:
-            self.get_logger().warn('Submap has <10 points, skipping.')
+        if len(submap.points) < self._min_points:
+            self.get_logger().warn(
+                f'Submap has {len(submap.points)} points (<{self._min_points}), skipping.')
             return
 
         result = run(submap, self._full_map, self._T_world_struct, self._params)
@@ -242,11 +258,38 @@ class MapMatchingNode(Node):
         # Convert lidar-frame result to base_link frame: T_world_baselink = T_world_lidar @ T_lidar_baselink
         pose_baselink = result.pose_world @ self._T_lidar_baselink
 
-        # Raw pose on the main topic.
+        # --- Consistency check vs previous valid measurement ---
+        cov_scale = 1.0
+        is_consistent = True
+        if self._last_pose is not None:
+            delta_t = float(np.linalg.norm(pose_baselink[:3, 3] - self._last_pose[:3, 3]))
+            R_diff = self._last_pose[:3, :3].T @ pose_baselink[:3, :3]
+            delta_r_deg = math.degrees(
+                math.acos(float(np.clip((np.trace(R_diff) - 1.0) / 2.0, -1.0, 1.0)))
+            )
+            if delta_t > self._consistency_max_t or delta_r_deg > self._consistency_max_r_deg:
+                is_consistent = False
+                cov_scale = self._consistency_cov_scale
+                self.get_logger().warn(
+                    f'Inconsistent jump: Δt={delta_t:.2f}m Δr={delta_r_deg:.1f}° '
+                    f'— publishing with covariance ×{cov_scale:.0f}'
+                )
+        self._last_pose = pose_baselink
+
+        # --- Warmup: fill the vote buffer silently before publishing ---
+        self._valid_count += 1
+        if self._valid_count <= self._warmup_count:
+            self._add_and_vote(pose_baselink)
+            self.get_logger().info(
+                f'Warming up: {self._valid_count}/{self._warmup_count} valid measurements'
+            )
+            return
+
+        # --- Publish raw pose (scaled covariance when inconsistent) ---
         out = PoseWithCovarianceStamped()
         out.header.stamp = msg.header.stamp
         out.header.frame_id = self._world_frame
-        out.pose = pose_with_covariance(pose_baselink, result.covariance)
+        out.pose = pose_with_covariance(pose_baselink, result.covariance * cov_scale)
         self._pub.publish(out)
 
         R_raw = pose_baselink[:3, :3]
@@ -257,8 +300,14 @@ class MapMatchingNode(Node):
         raw_euler.vector.z = math.atan2(float(R_raw[1, 0]), float(R_raw[0, 0]))
         self._euler_pub.publish(raw_euler)
 
-        # Voted (modal-cluster) pose on the secondary topic.
-        voted_pose = self._vote_pose(pose_baselink)
+        # --- Voted pose: only consistent measurements enter the buffer ---
+        if is_consistent:
+            voted_pose = self._add_and_vote(pose_baselink)
+            self._last_voted_pose = voted_pose
+        else:
+            voted_pose = self._last_voted_pose if self._last_voted_pose is not None \
+                else self._compute_vote(pose_baselink)
+
         voted_out = PoseWithCovarianceStamped()
         voted_out.header.stamp = msg.header.stamp
         voted_out.header.frame_id = self._world_frame
@@ -285,11 +334,12 @@ class MapMatchingNode(Node):
         self.get_logger().info(
             f'GICP fitness={result.gicp.fitness:.3f} rmse={result.gicp.inlier_rmse:.3f}m  '
             f'roll={result.roll_deg:.1f}° pitch={result.pitch_deg:.1f}° yaw={result.yaw_deg:.1f}° '
-            f'attempts={result.attempts} | '
+            f'attempts={result.attempts} consistent={is_consistent} | '
             f'x={pose_baselink[0,3]:.3f} y={pose_baselink[1,3]:.3f} z={pose_baselink[2,3]:.3f} '
             f'voted(n={buf_n}): '
             f'x={voted_pose[0,3]:.3f} y={voted_pose[1,3]:.3f} z={voted_pose[2,3]:.3f} '
-            f'roll={voted_roll:.1f}° pitch={voted_pitch:.1f}° yaw={voted_yaw:.1f}°'
+            f'roll={math.degrees(voted_roll):.1f}° pitch={math.degrees(voted_pitch):.1f}° '
+            f'yaw={math.degrees(voted_yaw):.1f}°'
         )
 
 

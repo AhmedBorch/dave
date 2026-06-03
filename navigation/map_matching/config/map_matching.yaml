@@ -52,3 +52,17 @@ map_matching:
     # minority clusters and be ignored.
     vote_buffer_size: 30
     vote_cluster_radius: 0.3
+
+    # Quality gates
+    # Minimum number of LiDAR points required to attempt registration.
+    min_points: 1000
+    # Number of valid estimates to collect silently before publishing anything.
+    # Allows the vote buffer to warm up and prevents noisy early outputs.
+    warmup_measurements: 20
+    # Consecutive-scan consistency thresholds. If a new estimate jumps further
+    # than these limits from the previous one, it is flagged as inconsistent:
+    #   - the raw topic is published with covariance scaled by consistency_covariance_scale
+    #   - the voted topic reuses the last stable voted estimate (buffer not updated)
+    consistency_max_translation_m: 1.0
+    consistency_max_rotation_deg: 10.0
+    consistency_covariance_scale: 1000.0
