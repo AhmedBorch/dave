@@ -11,7 +11,6 @@
 #include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <memory>
 #include <nav_msgs/msg/odometry.hpp>
-#include <random>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/fluid_pressure.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -44,8 +43,8 @@ class ESKFNode : public rclcpp::Node {
 
     void mag_callback(const sensor_msgs::msg::MagneticField::SharedPtr msg);
 
-    // @brief Inject a noisy ground-truth yaw as a 1-DOF heading correction.
-    void gt_yaw_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
+    // @brief Update ESKF with a heading (yaw) measurement (std_msgs/Float64, rad).
+    void heading_callback(const std_msgs::msg::Float64::SharedPtr msg);
 
     // @brief Update ESKF with a 6-DOF pose from the map-matcher.
     void map_pose_callback(
@@ -82,7 +81,7 @@ class ESKFNode : public rclcpp::Node {
 
     rclcpp::Subscription<sensor_msgs::msg::MagneticField>::SharedPtr mag_sub_;
 
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr gt_yaw_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr heading_sub_;
 
     rclcpp::Subscription<
         geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr map_pose_sub_;
@@ -131,12 +130,7 @@ class ESKFNode : public rclcpp::Node {
 
     Eigen::Vector3d mag_reference_field_{};  // world-frame B-field (T)
 
-    // GT yaw noise injection (placeholder until the real magnetometer pathway
-    // is sorted). Subscribes to a Gazebo odometry topic and feeds yaw + N(0,σ²)
-    // into the ESKF as a 1-DOF heading measurement.
-    double yaw_gt_noise_std_{0.4};  // σ in radians (~3°) for 0.05
-    std::mt19937 rng_{std::random_device{}()};
-    std::normal_distribution<double> yaw_noise_dist_{0.0, 1.0};
+    double heading_noise_var_{0.0025};       // (heading_noise_std)^2, rad²
     Eigen::Matrix3d mag_noise_{};            // measurement noise covariance (T²)
 
     rclcpp::Time last_imu_time_{};

@@ -41,7 +41,7 @@ ESKFNode::ESKFNode(const rclcpp::NodeOptions& options)
     this->declare_parameter<std::string>("topics.pressure_sensor");
     this->declare_parameter<std::string>("topics.odom");
     this->declare_parameter<std::string>("topics.magnetometer", "");
-    this->declare_parameter<std::string>("topics.ground_truth_odom", "");
+    this->declare_parameter<std::string>("topics.heading", "");
     this->declare_parameter<std::string>("topics.map_pose", "");
     this->declare_parameter<std::string>("topics.pose");
     this->declare_parameter<std::string>("topics.twist");
@@ -82,14 +82,12 @@ void ESKFNode::set_subscribers_and_publisher() {
         RCLCPP_INFO(get_logger(), "Magnetometer enabled: '%s'", mag_topic.c_str());
     }
 
-    std::string gt_yaw_topic = this->get_parameter("topics.ground_truth_odom").as_string();
-    if (!gt_yaw_topic.empty()) {
-        gt_yaw_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            gt_yaw_topic, qos,
-            std::bind(&ESKFNode::gt_yaw_callback, this, std::placeholders::_1));
-        RCLCPP_INFO(get_logger(),
-            "GT-yaw injection enabled (noisy heading from '%s')",
-            gt_yaw_topic.c_str());
+    std::string heading_topic = this->get_parameter("topics.heading").as_string();
+    if (!heading_topic.empty()) {
+        heading_sub_ = this->create_subscription<std_msgs::msg::Float64>(
+            heading_topic, qos,
+            std::bind(&ESKFNode::heading_callback, this, std::placeholders::_1));
+        RCLCPP_INFO(get_logger(), "Heading update enabled: '%s'", heading_topic.c_str());
     }
 
     std::string map_pose_topic = this->get_parameter("topics.map_pose").as_string();
@@ -246,9 +244,8 @@ void ESKFNode::set_parameters() {
     RCLCPP_INFO(get_logger(), "add_gravity_to_imu: %s",
                 add_gravity_to_imu_ ? "true" : "false");
 
-    yaw_gt_noise_std_ =
-        this->declare_parameter<double>("yaw_gt_noise_std", 0.05);
-    yaw_noise_dist_ = std::normal_distribution<double>(0.0, yaw_gt_noise_std_);
+    heading_noise_var_ =
+        std::pow(this->declare_parameter<double>("heading_noise_std", 0.05), 2);
 }
 
 void ESKFNode::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {
@@ -371,19 +368,15 @@ void ESKFNode::mag_callback(
     eskf_->mag_update(mag_sensor);
 }
 
-void ESKFNode::gt_yaw_callback(
-    const nav_msgs::msg::Odometry::SharedPtr msg) {
+void ESKFNode::heading_callback(
+    const std_msgs::msg::Float64::SharedPtr msg) {
     if (!first_imu_msg_received_) return;
 
-    // Extract yaw (ENU REP-103) from the GT quaternion.
-    const auto& q = msg->pose.pose.orientation;
-    const double truth_yaw = std::atan2(
-        2.0 * (q.w * q.z + q.x * q.y),
-        1.0 - 2.0 * (q.y * q.y + q.z * q.z));
-
     SensorYaw yaw_sensor;
-    yaw_sensor.measurement = truth_yaw + yaw_noise_dist_(rng_);
-    yaw_sensor.measurement_noise = yaw_gt_noise_std_ * yaw_gt_noise_std_;
+    yaw_sensor.measurement = msg->data;
+    // Noise variance is declared by the heading_publisher node.
+    // Use a fixed small value here — the publisher already added the noise.
+    yaw_sensor.measurement_noise = heading_noise_var_;  // set via heading_noise_std param
     eskf_->yaw_update(yaw_sensor);
 }
 

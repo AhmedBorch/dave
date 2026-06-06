@@ -1,0 +1,10 @@
+heading_publisher:
+  ros__parameters:
+    # Ground-truth odometry source (Gazebo)
+    input_odom_topic: /model/bluerov2/odometry
+    # Published heading topic consumed by the ESKF
+    output_heading_topic: /model/bluerov2/heading
+    # Gaussian noise applied to the true yaw (radians, 1-sigma).
+    # 0.05 rad ≈ 3°  — reasonable compass quality in open water.
+    # Increase to 0.3+ to simulate magnetic interference near steel structure.
+    noise_std: 0.05

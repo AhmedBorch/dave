@@ -6,7 +6,7 @@ Two methods are available, selected by PipelineParams.use_brossard_cov:
   estimate_brossard() — Censi (or Bonnabel) analytic covariance from Brossard
                         et al. "A New Approach to 3D ICP Covariance Estimation"
                         (RA-L 2020).  Calls the precompiled icp_with_cov binary
-                        from /home/ahmed/map_matching/cov3D/3d-icp-cov/ via a
+                        from /../map_matching/cov3D/3d-icp-cov/ via a
                         single-iteration PointMatcher run at the GICP solution,
                         then reads the 6×6 output and reorders it to match our
                         [x, y, z, roll, pitch, yaw] convention.
@@ -28,7 +28,7 @@ from .registration import GicpResult
 # Two environment variables let the same code work on the host and in Docker
 # without any code changes:
 #
-#   BROSSARD_ROOT     — repo root (default: /home/ahmed/map_matching/cov3D/3d-icp-cov)
+#   BROSSARD_ROOT     — repo root (default: /../map_matching/cov3D/3d-icp-cov)
 #   BROSSARD_BUILD    — build dir name inside libpointmatcher/
 #                       host  → "build"        (compiled on host)
 #                       Docker→ "build_docker" (compiled inside container)

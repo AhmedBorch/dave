@@ -52,10 +52,10 @@
       topics:
         imu: /model/bluerov2/imu
         dvl_twist: /model/bluerov2/dvl/twist
-        # Real magnetometer disabled — frame/convention is still being sorted.
-        # Yaw is provided by noisy ground-truth instead (ground_truth_odom below).
         magnetometer: ""
-        ground_truth_odom: /model/bluerov2/odometry
+        # Heading (yaw) topic from the heading_publisher node (std_msgs/Float64, rad).
+        # Set to "" to disable. Must match heading_publisher's output_heading_topic.
+        heading: /model/bluerov2/heading
         pressure_sensor: /model/bluerov2/sea_pressure
         # Set to the map-matcher voted pose topic to enable absolute pose updates.
         # Leave empty to run without map-matcher corrections.
@@ -64,9 +64,10 @@
         pose: /model/bluerov2/eskf/pose
         twist: /model/bluerov2/eskf/twist
 
-      # σ of additive Gaussian noise applied to GT yaw before injection (radians).
-      # Tune to taste; smaller = tighter heading lock.
-      yaw_gt_noise_std: 0.3
+      # Heading measurement noise std dev (radians). Must match the noise_std
+      # configured in heading_publisher — they must agree so the ESKF trusts
+      # the heading measurement appropriately.
+      heading_noise_std: 0.3
 
       # Earth's B-field in world frame (ENU: x=East y=North z=Up), Tesla.
       # World origin: North Sea 56.7°N 3.5°E — Gazebo computes this via WMM.
