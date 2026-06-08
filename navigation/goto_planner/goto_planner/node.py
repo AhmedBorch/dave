@@ -58,6 +58,7 @@ class GotoPlannerNode(Node):
         self._z: Optional[float] = None
         self._yaw: Optional[float] = None
         self._vx_body: float = 0.0
+        self._vy_body: float = 0.0
         self._vz:      float = 0.0
         self._yaw_rate: float = 0.0
 
@@ -133,11 +134,13 @@ class GotoPlannerNode(Node):
         self.declare_parameter('slow_radius', 1.5)     # m
 
         # Proportional gains
+        self.declare_parameter('k_pos',   3.0)         # N per m  (horizontal position hold)
         self.declare_parameter('k_yaw',   3.0)         # N per rad
         self.declare_parameter('k_heave', 6.0)         # N per m
 
         # Derivative (damping) gains
         self.declare_parameter('k_d_surge', 5.0)       # N per (m/s)
+        self.declare_parameter('k_d_sway',  5.0)       # N per (m/s)
         self.declare_parameter('k_d_yaw',   1.5)       # N per (rad/s)
         self.declare_parameter('k_d_heave', 3.0)       # N per (m/s)
 
@@ -169,9 +172,11 @@ class GotoPlannerNode(Node):
         self._v_ang_stop  = gp('v_ang_stop').value
         self._settle_time = gp('settle_time').value
         self._slow_radius = gp('slow_radius').value
+        self._k_pos       = gp('k_pos').value
         self._k_yaw       = gp('k_yaw').value
         self._k_heave     = gp('k_heave').value
         self._k_d_surge   = gp('k_d_surge').value
+        self._k_d_sway    = gp('k_d_sway').value
         self._k_d_yaw     = gp('k_d_yaw').value
         self._k_d_heave   = gp('k_d_heave').value
         self._max_surge   = gp('max_surge_cmd').value
@@ -190,6 +195,7 @@ class GotoPlannerNode(Node):
 
         t = msg.twist.twist
         self._vx_body  = t.linear.x
+        self._vy_body  = t.linear.y
         self._vz       = t.linear.z
         self._yaw_rate = t.angular.z
 
@@ -231,63 +237,78 @@ class GotoPlannerNode(Node):
             self._max_heave,
         )
 
-        yaw_err   = 0.0
-        surge_cmd = 0.0
-        yaw_cmd   = 0.0
+        # Holonomic horizontal position hold toward the goal (all stages).
+        # The vehicle can sway, so it drives straight to the goal and holds x/y
+        # regardless of heading — no LOS yaw-then-surge needed.
+        surge_cmd, sway_cmd = self._horizontal_hold(self._goal_x, self._goal_y)
+
+        yaw_err = 0.0
+        yaw_cmd = 0.0
 
         if self._stage == Stage.APPROACH:
-            surge_cmd, yaw_cmd, yaw_err = self._approach_tick(xy_dist, err_x, err_y)
+            # Face the direction of travel while far; damp yaw once inside bubble.
+            if xy_dist > self._xy_tol:
+                desired_yaw = math.atan2(err_y, err_x)
+                yaw_err     = _wrap_pi(desired_yaw - self._yaw)
+                yaw_cmd     = self._yaw_pd(yaw_err)
+            else:
+                yaw_cmd = self._clamp(-self._k_d_yaw * self._yaw_rate, self._max_yaw)
+                if self._is_stopped():
+                    self._transition(Stage.SETTLE)
 
         elif self._stage == Stage.SETTLE:
-            surge_cmd = self._clamp(-self._k_d_surge * self._vx_body, self._max_surge)
-            yaw_cmd   = self._clamp(-self._k_d_yaw   * self._yaw_rate, self._max_yaw)
+            yaw_cmd = self._clamp(-self._k_d_yaw * self._yaw_rate, self._max_yaw)
             now = self.get_clock().now().nanoseconds * 1e-9
             if now >= self._settle_deadline:
-                if math.isnan(self._goal_yaw):
-                    self._transition(Stage.DONE)
-                else:
-                    self._transition(Stage.ORIENT)
+                self._transition(Stage.DONE if math.isnan(self._goal_yaw)
+                                 else Stage.ORIENT)
 
         elif self._stage == Stage.ORIENT:
-            surge_cmd = self._clamp(-self._k_d_surge * self._vx_body, self._max_surge)
-            yaw_err   = _wrap_pi(self._goal_yaw - self._yaw)
-            raw_yaw   = self._k_yaw * yaw_err - self._k_d_yaw * self._yaw_rate
-            yaw_cmd   = self._clamp(self._apply_yaw_sign(raw_yaw), self._max_yaw)
+            yaw_err = _wrap_pi(self._goal_yaw - self._yaw)
+            yaw_cmd = self._yaw_pd(yaw_err)
             if abs(yaw_err) < self._yaw_tol and abs(self._yaw_rate) < self._v_ang_stop:
                 self._transition(Stage.DONE)
 
         elif self._stage == Stage.DONE:
-            surge_cmd = self._clamp(-self._k_d_surge * self._vx_body, self._max_surge)
-            yaw_cmd   = self._clamp(-self._k_d_yaw   * self._yaw_rate, self._max_yaw)
+            # Hold position and (if specified) the final heading indefinitely.
+            if math.isnan(self._goal_yaw):
+                yaw_cmd = self._clamp(-self._k_d_yaw * self._yaw_rate, self._max_yaw)
+            else:
+                yaw_err = _wrap_pi(self._goal_yaw - self._yaw)
+                yaw_cmd = self._yaw_pd(yaw_err)
 
         self._publish_debug(err_x, err_y, err_z, xy_dist, yaw_err,
-                            surge_cmd, yaw_cmd, heave_cmd)
-        self._publish_allocated(surge_cmd, yaw_cmd, heave_cmd)
-
-    # ----------------------------------------------------------------- approach
-    def _approach_tick(self, xy_dist: float, err_x: float, err_y: float):
-        """LOS guidance. Returns (surge_cmd, yaw_cmd, yaw_err)."""
-        if xy_dist < self._xy_tol:
-            # Inside bubble: damp velocity, wait until stopped, then SETTLE.
-            if self._is_stopped():
-                self._transition(Stage.SETTLE)
-            surge = self._clamp(-self._k_d_surge * self._vx_body, self._max_surge)
-            yaw   = self._clamp(-self._k_d_yaw   * self._yaw_rate, self._max_yaw)
-            return surge, yaw, 0.0
-
-        desired_yaw = math.atan2(err_y, err_x)
-        yaw_err     = _wrap_pi(desired_yaw - self._yaw)
-
-        raw_yaw   = self._k_yaw * yaw_err - self._k_d_yaw * self._yaw_rate
-        yaw_cmd   = self._clamp(self._apply_yaw_sign(raw_yaw), self._max_yaw)
-
-        alignment = max(0.0, math.cos(yaw_err))
-        surge_ref = self._max_surge * math.tanh(xy_dist / self._slow_radius) * alignment
-        surge_cmd = self._clamp(surge_ref - self._k_d_surge * self._vx_body, self._max_surge)
-
-        return surge_cmd, yaw_cmd, yaw_err
+                            surge_cmd, sway_cmd, yaw_cmd, heave_cmd)
+        self._publish_allocated(surge_cmd, sway_cmd, yaw_cmd, heave_cmd)
 
     # --------------------------------------------------------------- helpers
+    def _horizontal_hold(self, tgt_x: float, tgt_y: float):
+        """World-frame position PD → body-frame (surge, sway) commands.
+
+        Drives the vehicle to (tgt_x, tgt_y) and holds it there, independent of
+        heading. The world-frame force is saturated by magnitude, rotated into
+        the body frame, then body-velocity damping is applied per axis.
+        """
+        ex = tgt_x - self._x
+        ey = tgt_y - self._y
+
+        fx_w = self._k_pos * ex
+        fy_w = self._k_pos * ey
+        mag  = math.hypot(fx_w, fy_w)
+        if mag > self._max_surge:
+            scale = self._max_surge / mag
+            fx_w *= scale
+            fy_w *= scale
+
+        c, s = math.cos(self._yaw), math.sin(self._yaw)
+        surge =  c * fx_w + s * fy_w - self._k_d_surge * self._vx_body
+        sway  = -s * fx_w + c * fy_w - self._k_d_sway  * self._vy_body
+        return self._clamp(surge, self._max_surge), self._clamp(sway, self._max_surge)
+
+    def _yaw_pd(self, yaw_err: float) -> float:
+        raw = self._k_yaw * yaw_err - self._k_d_yaw * self._yaw_rate
+        return self._clamp(self._apply_yaw_sign(raw), self._max_yaw)
+
     def _apply_yaw_sign(self, raw: float) -> float:
         return -raw if self._invert_yaw else raw
 
@@ -307,14 +328,16 @@ class GotoPlannerNode(Node):
     def _clamp(value: float, limit: float) -> float:
         return max(-limit, min(limit, value))
 
-    def _publish_allocated(self, surge: float, yaw: float, heave: float) -> None:
-        thrusts = allocate(surge, yaw, heave, self._limits)
+    def _publish_allocated(self, surge: float, sway: float,
+                           yaw: float, heave: float) -> None:
+        thrusts = allocate(surge, sway, yaw, heave, self._limits)
         for pub, val in zip(self._thruster_pubs, thrusts):
             pub.publish(Float64(data=float(val)))
 
     def _publish_debug(self, err_x: float, err_y: float, err_z: float,
                        xy_dist: float, yaw_err: float,
-                       surge_cmd: float, yaw_cmd: float, heave_cmd: float) -> None:
+                       surge_cmd: float, sway_cmd: float,
+                       yaw_cmd: float, heave_cmd: float) -> None:
         stamp = self.get_clock().now().to_msg()
 
         err = Vector3Stamped()
@@ -325,6 +348,7 @@ class GotoPlannerNode(Node):
 
         cmd = Twist()
         cmd.linear.x  = surge_cmd
+        cmd.linear.y  = sway_cmd
         cmd.linear.z  = heave_cmd
         cmd.angular.z = yaw_cmd
         self._cmd_pub.publish(cmd)

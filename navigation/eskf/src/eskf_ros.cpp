@@ -246,6 +246,11 @@ void ESKFNode::set_parameters() {
 
     heading_noise_var_ =
         std::pow(this->declare_parameter<double>("heading_noise_std", 0.05), 2);
+
+    double depth_noise_std =
+        this->declare_parameter<double>("depth_noise_std", 0.01);  // metres
+    depth_noise_var_  = depth_noise_std * depth_noise_std;
+    depth_noise_dist_ = std::normal_distribution<double>(0.0, depth_noise_std);
 }
 
 void ESKFNode::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {
@@ -405,11 +410,14 @@ void ESKFNode::depth_callback(
     SensorDepth depth_sensor;
     // Plugin publishes absolute pressure in kPa: P = P_atm + |z| * kPa_per_meter.
     // Invert to z in ENU (negative underwater).
-    depth_sensor.measurement =
+    // Plugin publishes pressure with no actual noise injected (noiseAmp = 0).
+    // Add Gaussian noise here to simulate realistic sensor uncertainty.
+    double clean_depth =
         -(msg->fluid_pressure - depth_standard_pressure_kPa_) / depth_kPa_per_meter_;
-    // msg->variance is in kPa²; convert to m²
-    depth_sensor.measurement_noise =
-        msg->variance / (depth_kPa_per_meter_ * depth_kPa_per_meter_);
+    depth_sensor.measurement =
+        clean_depth + depth_noise_dist_(depth_rng_);
+    // Use the configured noise std dev as measurement noise (m²).
+    depth_sensor.measurement_noise = depth_noise_var_;
     eskf_->depth_update(depth_sensor);
 
 #ifndef NDEBUG
@@ -456,25 +464,26 @@ void ESKFNode::publish_odom() {
     odom_msg.header.stamp = current_time;
     odom_msg.header.frame_id = frame("odom");
 
-    // Some cross terms of the covariance are ignored, and the acc/gyro biases
-    // cov are not published. Pos and orientation cov needs to be mapped from
-    // 6*6 matrix to an array (states 0-2)
-
+    // Full 6×6 pose covariance [x,y,z,rx,ry,rz] including all cross terms.
+    // Error-state layout: pos=0:3, vel=3:6, att(δθ)=6:9, bias_a=9:12, bias_g=12:15
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            odom_msg.pose.covariance[i * 6 + j] = error_state_.covariance(i, j);
-        }
-    }
-
-    // Orientation covariance (states 6–8)
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
+            // pos–pos
+            odom_msg.pose.covariance[i * 6 + j] =
+                error_state_.covariance(i, j);
+            // att–att
             odom_msg.pose.covariance[(i + 3) * 6 + (j + 3)] =
                 error_state_.covariance(i + 6, j + 6);
+            // pos–att and att–pos cross terms
+            odom_msg.pose.covariance[i * 6 + (j + 3)] =
+                error_state_.covariance(i, j + 6);
+            odom_msg.pose.covariance[(i + 3) * 6 + j] =
+                error_state_.covariance(i + 6, j);
         }
     }
 
-    // Linear velocity covariance
+    // Full 6×6 twist covariance [vx,vy,vz,wx,wy,wz].
+    // Only the linear velocity block is estimated; angular velocity is not in the state.
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             odom_msg.twist.covariance[i * 6 + j] =

@@ -5,9 +5,9 @@ goto_planner:
     odom_topic: /model/bluerov2/odometry
 
     goal_x: 4.0
-    goal_y: 0.0
+    goal_y: 3.0
     goal_z: -9.0
-    # goal_yaw: 0.0              # rad ENU (0=East, 1.5708=North). Omit to skip ORIENT stage.
+    goal_yaw: 0.5296            # rad ENU (0=East, 1.5708=North). Omit to skip ORIENT stage.
 
     # Tolerances
     xy_tolerance:  0.7           # m — APPROACH bubble radius
@@ -21,16 +21,17 @@ goto_planner:
     # Time to damp velocity in SETTLE before starting ORIENT (s)
     settle_time: 2.0
 
-    # LOS surge profile
-    # Surge = max_surge_cmd * tanh(dist / slow_radius) * cos(yaw_err)
+    # Approach saturation radius (legacy LOS param, kept for reference).
     slow_radius: 1.5             # m
 
     # Proportional gains
+    k_pos:   3.0                 # N per m   — horizontal position hold (surge & sway)
     k_yaw:   3.0                 # N per rad
     k_heave: 6.0                 # N per m
 
     # Derivative (damping) gains
     k_d_surge: 5.0               # N per (m/s)
+    k_d_sway:  5.0               # N per (m/s)
     k_d_yaw:   1.5               # N per (rad/s)
     k_d_heave: 3.0               # N per (m/s)
 
@@ -42,7 +43,7 @@ goto_planner:
 
     control_rate_hz: 20.0
 
-    # Set true if the robot turns the wrong way when approaching a y≠0 goal.
-    # Watch ~/debug/yaw_err: it should shrink toward 0 while APPROACH is active.
-    # If it grows instead, flip this flag.
-    invert_yaw: true
+    # With the corrected allocation, +yaw command → CCW rotation (standard ENU),
+    # so this should be false. Only flip if the robot turns the wrong way:
+    # watch ~/debug/yaw_err — it should shrink toward 0 during ORIENT.
+    invert_yaw: false

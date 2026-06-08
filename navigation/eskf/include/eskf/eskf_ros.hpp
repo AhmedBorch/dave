@@ -11,6 +11,7 @@
 #include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <memory>
 #include <nav_msgs/msg/odometry.hpp>
+#include <random>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/fluid_pressure.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -131,6 +132,9 @@ class ESKFNode : public rclcpp::Node {
     Eigen::Vector3d mag_reference_field_{};  // world-frame B-field (T)
 
     double heading_noise_var_{0.0025};       // (heading_noise_std)^2, rad²
+    double depth_noise_var_{1e-4};           // (depth_noise_std)^2, m²
+    std::mt19937 depth_rng_{std::random_device{}()};
+    std::normal_distribution<double> depth_noise_dist_{0.0, 0.01}; // σ = 0.01 m
     Eigen::Matrix3d mag_noise_{};            // measurement noise covariance (T²)
 
     rclcpp::Time last_imu_time_{};
