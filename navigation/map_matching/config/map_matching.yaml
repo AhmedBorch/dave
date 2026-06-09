@@ -51,6 +51,14 @@ map_matching:
       # Voxel size for downsampling before the Brossard ICP call [m].
       # Should match gicp.voxel_size for consistent point density.
       voxel_size: 0.05
+      # false → analytic term only (Censi/Bonnabel from the binary; fast).
+      # true  → full Brossard method: adds the unscented-transform term that
+      #         propagates an init prior through GICP (re-runs GICP ~13× per
+      #         estimate). Captures wrong-convergence uncertainty.
+      use_ut: false
+      # Init-prior difficulty for the UT term: easy | medium | hard
+      #   easy   = ±2°,  ±5 cm    medium = ±10°, ±25 cm    hard = ±30°, ±75 cm
+      q_ini_level: medium
 
     # Simple uncertainty estimator (used when use_brossard_cov: false)
     uncertainty:

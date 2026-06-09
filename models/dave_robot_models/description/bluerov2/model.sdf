@@ -47,14 +47,14 @@
         <topic>/model/bluerov2/imu</topic>
         <imu>
           <angular_velocity>
-            <x><noise type="gaussian"><mean>0</mean><stddev>0.25</stddev></noise></x>
-            <y><noise type="gaussian"><mean>0</mean><stddev>0.25</stddev></noise></y>
-            <z><noise type="gaussian"><mean>0</mean><stddev>0.25</stddev></noise></z>
+            <x><noise type="gaussian"><mean>0</mean><stddev>0.05</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>0.05</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.05</stddev></noise></z>
           </angular_velocity>
           <linear_acceleration>
-            <x><noise type="gaussian"><mean>0</mean><stddev>0.8</stddev></noise></x>
-            <y><noise type="gaussian"><mean>0</mean><stddev>0.8</stddev></noise></y>
-            <z><noise type="gaussian"><mean>0</mean><stddev>0.8</stddev></noise></z>
+            <x><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></z>
           </linear_acceleration>
         </imu>
       </sensor>
@@ -174,21 +174,21 @@
       </collision>
       <sensor name="gpu_lidar" type="gpu_lidar">
         <pose>0 0 0 0 0 0</pose>
-        <update_rate>10</update_rate>
+        <update_rate>5</update_rate>
         <lidar>
           <scan>
             <horizontal>
-              <samples>576</samples>
-              <!-- <samples>160</samples> -->
-              <!-- <samples>260</samples> -->
+              <!-- <samples>576</samples> -->
+              <!-- <samples>106</samples> -->
+              <samples>260</samples>
               <resolution>1</resolution>
               <min_angle>-0.785398</min_angle>
               <max_angle>0.785398</max_angle>
             </horizontal>
             <vertical>
-              <samples>256</samples>
-              <!-- <samples>80</samples> -->
-              <!-- <samples>120</samples> -->
+              <!-- <samples>256</samples> -->
+              <!-- <samples>25</samples> -->
+              <samples>120</samples>
               <resolution>1</resolution>
               <min_angle>-0.349066</min_angle>
               <max_angle>0.349066</max_angle>
@@ -196,7 +196,7 @@
           </scan>
           <range>
             <min>0.1</min>
-            <max>30.0</max>
+            <max>15.0</max>
             <resolution>0.01</resolution>
           </range>
           <noise>
@@ -281,7 +281,7 @@
               <when>best</when>
               <noise type="gaussian">
                 <!-- <stddev>0.005</stddev> -->
-                <stddev>0.05</stddev>
+                <stddev>0.02</stddev>
               </noise>
               <visualize>true</visualize>
             </bottom_mode>
@@ -630,7 +630,7 @@
       <topic>sea_pressure</topic>
       <update_rate>10</update_rate>
       <!-- <noise_sigma>3.0</noise_sigma> -->
-      <noise_sigma>20.0</noise_sigma>
+      <noise_sigma>3.0</noise_sigma>
       <estimate_depth_on>false</estimate_depth_on>
       <standard_pressure>101.325</standard_pressure>
       <kPa_per_meter>9.80638</kPa_per_meter>

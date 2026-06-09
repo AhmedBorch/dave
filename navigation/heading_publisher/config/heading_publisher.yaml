@@ -8,3 +8,5 @@ heading_publisher:
     # 0.05 rad ≈ 3°  — reasonable compass quality in open water.
     # Increase to 0.3+ to simulate magnetic interference near steel structure.
     noise_std: 0.05
+    # Fixed publication rate [Hz], decoupled from the odometry input rate.
+    publish_rate_hz: 10.0

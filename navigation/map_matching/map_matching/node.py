@@ -150,6 +150,8 @@ class MapMatchingNode(Node):
         self.declare_parameter('brossard.std_sensor', 0.01)
         self.declare_parameter('brossard.use_bonnabel', False)
         self.declare_parameter('brossard.voxel_size', 0.05)
+        self.declare_parameter('brossard.use_ut', False)
+        self.declare_parameter('brossard.q_ini_level', 'medium')
 
     def _load_full_map(self) -> None:
         path = self.get_parameter('full_map_path').get_parameter_value().string_value
@@ -180,6 +182,8 @@ class MapMatchingNode(Node):
                 std_sensor=gp('brossard.std_sensor').get_parameter_value().double_value,
                 use_bonnabel=gp('brossard.use_bonnabel').get_parameter_value().bool_value,
                 voxel_size=gp('brossard.voxel_size').get_parameter_value().double_value,
+                use_ut=gp('brossard.use_ut').get_parameter_value().bool_value,
+                q_ini_level=gp('brossard.q_ini_level').get_parameter_value().string_value,
             ),
             roll_pitch_limit_deg=gp('roll_pitch_limit_deg').get_parameter_value().double_value,
             max_ransac_retries=gp('max_ransac_retries').get_parameter_value().integer_value,

@@ -96,10 +96,14 @@ def run(submap: o3d.geometry.PointCloud,
 
         if params.use_brossard_cov:
             try:
-                cov = estimate_brossard(gicp_result, submap, full_map, params.brossard)
-            except Exception as exc:
-                import warnings
-                warnings.warn(f'Brossard covariance failed, falling back to simple estimate: {exc}')
+                cov = estimate_brossard(gicp_result, submap, full_map,
+                                        params.brossard, params.gicp)
+            except Exception:
+                import sys
+                import traceback
+                print('[map_matching] Brossard covariance FAILED — falling back '
+                      'to simple estimate. Real error follows:', file=sys.stderr)
+                traceback.print_exc()
                 cov = estimate(gicp_result, params.uncertainty)
         else:
             cov = estimate(gicp_result, params.uncertainty)

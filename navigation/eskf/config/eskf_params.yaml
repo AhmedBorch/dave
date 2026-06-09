@@ -12,9 +12,9 @@
       # With no magnetometer, yaw is unobservable, so the filter has no way to verify a
       # yaw_bias correction — left at 1e-4 it absorbs every unexplained DVL innovation
       # into bias_z and over-rotates the ESKF. Small Q effectively pins bias near zero.
-      diag_Q_std: [0.2, 0.2, 0.2,    # accel x/y/z  (6.3e-4 × 5 ≈ 0.003)
-                  0.03, 0.03, 0.03,    # gyro  x/y/z  (1.6e-4 × 5 ≈ 0.001)
-                  0.0001, 0.001, 0.001,    # accel bias random walk
+      diag_Q_std: [0.2, 0.2, 0.2,    # accel
+                  0.03, 0.03, 0.03,    # gyro
+                  0.001, 0.001, 0.001,    # accel bias random walk
                   1.0e-5, 1.0e-5, 1.0e-5] # gyro bias random walk (heavily damped)
       # ── Initial error-state covariance (15 values on diagonal) ───────────
       # [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z,
@@ -73,7 +73,7 @@
       # does not actually inject noise (noiseAmp = 0 in the plugin source).
       # This value is used both to corrupt the measurement and as R in the filter.
       # 0.01 m ≈ 1 cm, consistent with a good subsea pressure sensor.
-      depth_noise_std: 0.01
+      depth_noise_std: 0.1
 
       # Earth's B-field in world frame (ENU: x=East y=North z=Up), Tesla.
       # World origin: North Sea 56.7°N 3.5°E — Gazebo computes this via WMM.
